@@ -1,0 +1,18 @@
+{
+    "short_name": "Organizer",
+    "name": "Organizer",
+    "icons": [
+        {
+            "src": "icons/twemoji-books.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        }
+    ],
+    "capture_links": "new-client",
+    "start_url": "/",
+    "display": "standalone",
+    "display_override": ["window-controls-overlay"],
+    "scope": "/",
+    "theme_color": "#111111",
+    "description": "Silly organizer application"
+}
