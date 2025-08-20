@@ -51,10 +51,7 @@ export const TaskList: MarkdownConfig = {
         name: "TaskList",
         leaf(cx, leaf) {
             const match = /^\[([^\]]+)\][ \t]/.exec(leaf.content);
-            return match &&
-            cx.parentType().name == "ListItem"
-            ? new MultiStatusTaskParser(match[1])
-            : null;
+            return match && cx.parentType().name == "ListItem" ? new MultiStatusTaskParser(match[1]) : null;
         },
         after: "SetextHeading",
     }],

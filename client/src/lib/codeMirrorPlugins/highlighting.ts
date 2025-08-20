@@ -39,7 +39,7 @@ export function customMarkdownStyle() {
         { tag: t.regexp, class: "editor-string" },
         { tag: t.string, class: "editor-string" },
         { tag: t.number, class: "editor-number" },
-        { tag: [t.regexp, t.escape, t.special(t.string)], class: "editor-string2" },
+        { tag: [t.regexp, t.escape, t.special(t.string)], class: "editor-escapedOrString" },
         { tag: t.variableName, class: "editor-variableName" },
         { tag: t.typeName, class: "editor-typeName" },
         { tag: t.strikethrough, class: "editor-strikethrough" },
@@ -52,10 +52,7 @@ export function customMarkdownStyle() {
         { tag: ct.NakedURLTag, class: "editor-naked-url" },
         { tag: ct.TaskDeadlineTag, class: "editor-task-deadline" },
         { tag: ct.SubscriptTag, class: "editor-sub" },
-        { tag: ct.SuperscriptTag, class: "editor-sup" },
-        
-        { tag: ct.DirectiveMarkTag, class: "editor-directive-mark" },
-        { tag: ct.DirectiveTag, class: "editor-directive" },
+        { tag: ct.SuperscriptTag, class: "editor-sup" }
     ]);
 }
 

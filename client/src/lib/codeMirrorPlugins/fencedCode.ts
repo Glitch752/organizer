@@ -11,8 +11,8 @@ export function fencedCodePlugin() {
         const widgets: Range<Decoration>[] = [];
         syntaxTree(state).iterate({
             enter({ from, to, name, node }) {
-                if (name === "FencedCode") {
-                    if (isCursorInRange(state, [from, to])) {
+                if(name === "FencedCode") {
+                    if(isCursorInRange(state, [from, to])) {
                         // Don't render the widget if the cursor is inside the fenced code
                         return;
                     }
@@ -29,7 +29,7 @@ export function fencedCodePlugin() {
                         
                     //     const lines: { from: number; to: number }[] = [];
                     //     let fromIt = from;
-                    //     for (const line of lineStrings) {
+                    //     for(const line of lineStrings) {
                     //         lines.push({
                     //             from: fromIt,
                     //             to: fromIt + line.length,

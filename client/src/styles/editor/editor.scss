@@ -1,0 +1,522 @@
+@use "./lineOverflow" as lineOverflow;
+
+.cm-editor {
+    height: 100%;
+    font-size: 18px;
+
+    .cm-content {
+        width: 100%;
+        margin: 0 auto;
+        max-width: var(--max-content-width);
+        padding: 5px 20px;
+        font-family: var(--font-mono);
+    }
+
+    .cm-selectionBackground {
+        background-color: #d7e1f630 !important;
+    }
+
+    .cm-panels-bottom {
+        color: #fff;
+        background-color: var(--surface-0);
+        border-top: var(--surface-1-border) 2px solid;
+
+        button {
+            border-radius: 5px;
+            border: var(--surface-1-border) 2px solid;
+            background: var(--surface-1);
+        }
+
+        .cm-textfield {
+            background-color: var(--surface-1);
+            border-radius: 5px;
+            border: var(--surface-1-border) 2px solid;
+        }
+
+        button, .cm-textfield {
+            outline: none;
+
+            &:focus-visible {
+                border: var(--blue-text) 2px solid;
+            }
+        }
+
+        input[type="checkbox"] {
+            width: 1.5em;
+            height: 1.5em;
+            margin-right: 7px !important;
+            margin-bottom: -5px;
+            box-sizing: content-box;
+            appearance: none;
+            position: relative;
+            outline: none;
+
+            &:focus-visible::before {
+                border: var(--blue-text) 2px solid;
+            }
+            &::before {
+                content: "";
+                display: block;
+                width: 100%;
+                height: 100%;
+                background-color: var(--surface-1);
+                border: var(--surface-1-border) 2px solid;
+                border-radius: 5px;
+            }
+            &:checked::after {
+                content: "";
+                display: block;
+                position: absolute;
+                top: 4px;
+                left: 4px;
+                bottom: 4px;
+                aspect-ratio: 1;
+                border-radius: 3px;
+                background-color: var(--blue-text);
+                text-align: center;
+            }
+        }
+    }
+
+
+    .cm-line {
+        padding: 0;
+
+        &.editor-line-h1,
+        &.editor-line-h2,
+        &.editor-line-h3,
+        &.editor-line-h4,
+        &.editor-line-h5,
+        &.editor-line-h6 {
+            font-weight: bold;
+            padding: 2px;
+
+            color: var(--color-important-text);
+        }
+
+        &.editor-line-h1 .editor-meta,
+        &.editor-line-h2 .editor-meta,
+        &.editor-line-h3 .editor-meta,
+        &.editor-line-h4 .editor-meta,
+        &.editor-line-h5 .editor-meta,
+        &.editor-line-h6 .editor-meta {
+            color: var(--subtle-text);
+        }
+    }
+
+    .editor-line-h1, h1 {
+        font-size: 1.5em;
+    }
+    .editor-line-h2, h2 {
+        font-size: 1.2em;
+    }
+    .editor-line-h3, h3 {
+        font-size: 1.1em;
+    }
+
+    .editor-line-h4, h4,
+    .editor-line-h5, h5,
+    .editor-line-h6, h6 {
+        font-size: 1em;
+    }
+
+    @include lineOverflow.overflowRules;
+
+    .editor-line-comment {
+        text-indent: -1 * 3ch;
+        padding-left: 3ch;
+    }
+
+    .cm-list-bullet {
+        position: relative;
+        visibility: hidden;
+    }
+    .cm-list-bullet::after {
+        visibility: visible;
+        position: absolute;
+        content: "\2022"; // U+2022 BULLET
+
+        color: #969696;
+    }
+
+    .cm-task-checked,
+    .editor-line-task:has(.cm-task-checked) .editor-wiki-link-page {
+        text-decoration: line-through !important;
+    }
+
+    .cm-tooltip-autocomplete {
+        background-color: var(--surface-0);
+        color: var(--color-text);
+
+        li[aria-selected] .cm-completionDetail {
+            color: #d2d2d2;
+        }
+
+        .cm-completionDetail {
+            font-style: normal;
+            display: block;
+            font-size: 80%;
+            margin-left: 5px;
+        }
+
+        .cm-completionLabel {
+            display: block;
+            margin-left: 5px;
+        }
+
+        .cm-completionIcon {
+            display: none;
+        }
+    }
+
+    .editor-header-inside.editor-line-h1 {
+        text-indent: -2ch;
+    }
+
+    .editor-header-inside.editor-line-h2 {
+        text-indent: -3ch;
+    }
+
+    .editor-header-inside.editor-line-h3 {
+        text-indent: -4ch;
+    }
+
+    .editor-header-inside.editor-line-h4 {
+        text-indent: -5ch;
+    }
+
+    .editor-header-inside.editor-line-h5 {
+        text-indent: -6ch;
+    }
+
+    .editor-header-inside.editor-line-h6 {
+        text-indent: -7ch;
+    }
+
+    .editor-checkbox > input[type="checkbox"] {
+        width: 3ch;
+    }
+
+    .editor-hashtag, .hashtag {
+        border-radius: 6px;
+        padding: 0 3px;
+        margin: 0 1px 0 0;
+        font-size: 0.9em;
+    }
+
+    .editor-strikethrough {
+        text-decoration: line-through;
+
+        &.editor-meta {
+            text-decoration: none;
+        }
+    }
+
+    .editor-line-hr {
+        margin-top: 1em;
+        margin-bottom: -1em;
+
+        border-top: #4C4B4B solid 1px;
+    }
+
+    .editor-hr {
+        font-weight: bold;
+    }
+
+    .editor-naked-url {
+        cursor: pointer;
+    }
+
+    .editor-link:not(.editor-url) {
+        cursor: pointer;
+    }
+
+    .editor-link:not(.editor-meta, .editor-url) {
+        text-decoration: underline;
+    }
+
+    .editor-url:not(.editor-link) {
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    .editor-wiki-link-page {
+        border-radius: 5px;
+        padding: 0 5px;
+        // white-space: nowrap;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    a.editor-wiki-link-page-missing,
+    .editor-wiki-link-page-missing > .editor-wiki-link-page {
+        border-radius: 5px;
+        padding: 0 5px;
+        // white-space: nowrap;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+
+    .editor-line-blockquote {
+        text-indent: -2ch;
+    }
+
+    .editor-blockquote-outside {
+        text-indent: -1ch;
+        min-height: 1em;
+    }
+
+    .editor-line-table-outside {
+        display: none;
+    }
+
+    .editor-line-tbl-header {
+        font-weight: bold;
+    }
+
+    .editor-line-tbl-header .meta {
+        font-weight: normal;
+    }
+
+    .editor-table-widget {
+        display: block;
+        font-weight: normal;
+        margin-bottom: -3rem;
+        overflow: auto;
+    }
+
+    table {
+        width: 100%;
+        border-spacing: 0;
+    }
+
+    thead tr {
+        font-weight: bold;
+    }
+
+    thead tr td {
+        padding: 11px 8px;
+    }
+
+    th, td {
+        padding: 8px;
+        white-space: nowrap;
+    }
+
+
+    .editor-line-code .editor-code {
+        background-color: transparent;
+    }
+
+    .editor-line-code-outside .editor-code-info {
+        display: block;
+        float: right;
+        font-size: 90%;
+        padding-right: 7px;
+    }
+
+    .editor-line-fenced-code {
+        background-color: var(--subtle-background-highlight);
+
+        .editor-code {
+            background-color: #7c828e;
+        }
+
+        .editor-comment {
+            border-radius: 0;
+            font-style: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            color: var(--subtle-text);
+        }
+
+        .editor-variableName {
+            color: #41a3ce;
+        }
+
+        .editor-typeName {
+            color: #038138;
+        }
+
+        .editor-string {
+            color: #986db9;
+        }
+
+        .editor-number {
+            color: #986db9;
+        }
+
+        .editor-operator {
+            color: #808080;
+        }
+    }
+
+    .editor-escapedOrString {
+        color: #986db9;
+    }
+    .editor-meta {
+        color: #d6222e;
+    }
+    
+    .editor-keyword {
+        font-weight: bold;
+    }
+
+    .editor-li-cursor .editor-meta {
+        color: var(--subtle-text);
+    }
+
+    thead tr {
+        background-color: var(--surface-1);
+        color: var(--color-important-text);
+    }
+
+    tbody tr:nth-of-type(even) {
+        background-color: var(--surface-1);
+    }
+
+    .editor-line-blockquote {
+        background-color: var(--subtle-background-highlight);
+        color: var(--subtle-text);
+        border-left: 1px solid #4a4a4a;
+    }
+
+    // Allow for cursor movement into a code widget fenced code block from bottom-up
+    .editor-fenced-code-hide {
+        background-color: transparent;
+        line-height: 0;
+    }
+
+    .editor-line-code-outside {
+        .editor-meta {
+            color: transparent;
+        }
+
+        color: transparent;
+    }
+
+    .editor-admonition {
+        border-left-width: 4px !important;
+        border-left-style: solid;
+        border-left-color: var(--admonition-color);
+        padding-left: 5px;
+    }
+
+    .editor-admonition-title {
+        background-color: color-mix(
+            in srgb,
+            var(--admonition-color, #696969),
+            transparent 90%
+        );
+    }
+
+    .editor-admonition-type::before {
+        background-color: var(--admonition-color);
+    }
+
+    .editor-admonition[admonition="note" i] {
+        .editor-admonition-type {
+            &::before {
+                width: var(--admonition-width) !important;
+            }
+
+            * {
+                display: none;
+            }
+        }
+
+        --admonition-icon: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>');
+        --admonition-color: #00b8d4;
+    }
+
+    .editor-admonition[admonition="warning" i] {
+        .editor-admonition-type {
+            &::before {
+                width: var(--admonition-width) !important;
+            }
+
+            * {
+                display: none;
+            }
+        }
+
+        --admonition-icon: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>');
+        --admonition-color: #ff9100;
+    }
+
+    .editor-admonition-type::before {
+        content: "";
+        mask: var(--admonition-icon) no-repeat;
+        -webkit-mask: var(--admonition-icon) no-repeat;
+        mask-size: cover;
+        -webkit-mask-size: cover;
+
+        /* Used in admonition definitions */
+        --admonition-width: 1.1em;
+        width: 0em;
+        height: 1.1em;
+        display: inline-flex;
+        vertical-align: middle;
+    }
+
+    .cm-line:last-child {
+        // Give some breathing space at the bottom of the screen
+        padding-bottom: 20em;
+    }
+
+    .editor-emphasis {
+        font-style: italic;
+    }
+    .editor-strong {
+        font-weight: 900;
+    }
+    .editor-sub {
+        vertical-align: sub;
+        font-size: smaller;
+    }
+    .editor-sup {
+        vertical-align: super;
+        font-size: smaller;
+    }
+    .editor-line-code-outside .editor-code-info {
+        color: var(--subtle-text);
+    }
+    a, .editor-link:not(.editor-meta, .editor-url) {
+        color: #7e99fc;
+    }
+    .editor-link.editor-url {
+        color: var(--subtle-text);
+    }
+    .editor-url:not(.editor-link) {
+        color: #7e99fc;
+    }
+    .editor-atom {
+        color: #d6222e;
+    }
+
+    
+    .editor-wiki-link-page {
+        color: #7e99fc;
+        background-color: #a3bce712;
+    }
+    a.editor-wiki-link-page-missing,
+    .editor-wiki-link-page-missing > .editor-wiki-link-page {
+        color: #9e4705;
+        background-color: #a3bce712;
+    }
+    .editor-wiki-link {
+        color: #7e99fc;
+    }
+
+    .editor-task-mark {
+        color: var(--subtle-text);
+    }
+    .editor-task-state {
+        color: var(--subtle-text);
+    }
+
+    .editor-line-comment {
+        background-color: var(--subtle-text);
+    }
+}

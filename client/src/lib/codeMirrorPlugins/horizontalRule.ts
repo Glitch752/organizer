@@ -21,7 +21,7 @@ export function horizontalRulePlugin() {
                         widgets.push(invisibleDecoration.range(node.from, node.to));
                         widgets.push(
                             Decoration.line({
-                                class: "sb-line-hr",
+                                class: "editor-line-hr",
                             }).range(node.from),
                         );
                     }

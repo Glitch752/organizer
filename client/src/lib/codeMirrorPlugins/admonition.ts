@@ -63,7 +63,7 @@ export function admonitionPlugin() {
             enter: (node: SyntaxNodeRef) => {
                 const { type, from, to } = node;
                 
-                if (type.name === "Blockquote") {
+                if(type.name === "Blockquote") {
                     // Extract raw text from admonition block
                     const rawText = state.sliceDoc(from, to);
                     
@@ -71,9 +71,7 @@ export function admonitionPlugin() {
                     const extractedFields = extractAdmonitionFields(rawText);
                     
                     // Bailout here if we don't have a proper Admonition formatted blockquote
-                    if (!extractedFields) {
-                        return;
-                    }
+                    if(!extractedFields) return;
                     
                     const { preSpaces, admonitionType, postSyntax } = extractedFields;
                     

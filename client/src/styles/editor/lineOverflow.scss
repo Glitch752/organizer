@@ -1,0 +1,112 @@
+@mixin lineOverflow($baseIndent, $bulletIndent: 0) {
+    text-indent: calc(-1 * (#{$baseIndent}ch + 2ch));
+    padding-left: calc(#{$baseIndent}ch + 2ch);
+
+    &.editor-line-task {
+        text-indent: calc(-1 * (#{$baseIndent}ch + 5ch));
+        padding-left: calc(#{$baseIndent}ch + 5ch);
+
+        .cm-list-bullet::after {
+            left: calc(#{$baseIndent}ch + 5ch);
+        }
+    }
+
+    &.editor-line-blockquote {
+        text-indent: calc(-1 * (#{$baseIndent}ch + 4ch));
+        padding-left: calc(#{$baseIndent}ch + 4ch);
+    }
+
+    .cm-list-bullet::after {
+        left: calc(#{$baseIndent}ch + #{$bulletIndent}ch + 2ch);
+    }
+}
+
+@mixin overflowRules {
+    .editor-line-ul {
+        &.editor-line-li-1 {
+            @include lineOverflow(0);
+        }
+
+        &.editor-line-li-1.editor-line-li-2 {
+            @include lineOverflow(2);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3 {
+            @include lineOverflow(4);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3.editor-line-li-4 {
+            @include lineOverflow(6);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3.editor-line-li-4.editor-line-li-5 {
+            @include lineOverflow(8);
+        }
+    }
+
+    .editor-line-ol {
+        &.editor-line-li-1 {
+            @include lineOverflow(1);
+        }
+
+        &.editor-line-li-1.editor-line-li-2 {
+            @include lineOverflow(4);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3 {
+            @include lineOverflow(7);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3.editor-line-li-4 {
+            @include lineOverflow(10);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3.editor-line-li-4.editor-line-li-5 {
+            @include lineOverflow(13);
+        }
+    }
+
+    .editor-line-ol.editor-line-ul {
+        // &.editor-line-li-1 {
+        //   @include lineOverflow(1);
+        // }
+
+        &.editor-line-li-1.editor-line-li-2 {
+            @include lineOverflow(3);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3 {
+            @include lineOverflow(6);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3.editor-line-li-4 {
+            @include lineOverflow(9);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3.editor-line-li-4.editor-line-li-5 {
+            @include lineOverflow(12);
+        }
+    }
+
+    .editor-line-blockquote {
+        &.editor-line-li-1 {
+            @include lineOverflow(-1, 2);
+        }
+
+        &.editor-line-li-1.editor-line-li-2 {
+            @include lineOverflow(1, 2);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3 {
+            @include lineOverflow(4);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3.editor-line-li-4 {
+            @include lineOverflow(6);
+        }
+
+        &.editor-line-li-1.editor-line-li-2.editor-line-li-3.editor-line-li-4.editor-line-li-5 {
+            @include lineOverflow(8);
+        }
+    }
+}

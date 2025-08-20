@@ -10,6 +10,7 @@
     import { searchKeymap } from "@codemirror/search";
     import { completionKeymap, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
     import { customPlugins } from "../lib/codeMirrorPlugins";
+    import "../styles/editor/editor.scss";
 
     import * as Y from "yjs";
 
@@ -88,15 +89,8 @@
 
 <div bind:this={editorContainer}></div>
 
-<style>
+<style lang="scss">
     div {
         height: 100%;
-    }
-
-    :global {
-        /* todo */
-        .cm-editor {
-            height: 100%;
-        }
     }
 </style>

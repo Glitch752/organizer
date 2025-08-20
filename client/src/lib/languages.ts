@@ -50,17 +50,9 @@ import {
 } from "@codemirror/lang-javascript";
 import { cssLanguage } from "@codemirror/lang-css";
 
-const yamlStreamLanguage = StreamLanguage.define(yamlLanguage);
-
 export const builtinLanguages: Record<string, Language> = {
-    "meta": yamlStreamLanguage,
-    "yaml": yamlStreamLanguage,
-    "include": yamlStreamLanguage,
-    "space-config": yamlStreamLanguage,
-    "data": yamlStreamLanguage,
-    "toc": yamlStreamLanguage,
+    "yaml": StreamLanguage.define(yamlLanguage),
     "javascript": javascriptLanguage,
-    "space-script": javascriptLanguage,
     "js": javascriptLanguage,
     "typescript": typescriptLanguage,
     "ts": typescriptLanguage,
@@ -72,7 +64,6 @@ export const builtinLanguages: Record<string, Language> = {
     "rs": StreamLanguage.define(rustLanguage),
     "r": StreamLanguage.define(rLanguage),
     "css": cssLanguage,
-    "space-style": cssLanguage,
     "html": htmlLanguage,
     "python": StreamLanguage.define(pythonLanguage),
     "py": StreamLanguage.define(pythonLanguage),
