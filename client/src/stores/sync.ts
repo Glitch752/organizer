@@ -28,7 +28,7 @@ import { v4 as uuidv4 } from "uuid";
 const websocketURL = `ws${location.protocol === "https:" ? "s" : ""}://${location.host}/ws`;
 console.log(`Websocket URL: ${websocketURL}`);
 
-function getDocument(id: string, loadedCallback: (() => void) | null = null) {
+export function getDocument(id: string, loadedCallback: (() => void) | null = null) {
     const doc = new Y.Doc();
     
     const localPersistence = new IndexeddbPersistence(id, doc);
@@ -58,6 +58,7 @@ function getDocument(id: string, loadedCallback: (() => void) | null = null) {
 
     return {
         doc,
+        awareness: remoteProvider.awareness!,
         disconnect() {
             remoteProvider.disconnect();
             remoteProvider.destroy();

@@ -4,15 +4,17 @@
 		'Open Sans', 'Helvetica Neue', sans-serif;
 	--font-mono: 'Fira Mono', monospace;
 
-	--background: #070707;
+	--background: #090909;
 	--surface-0: #111111;
 	--surface-1: #1c1d20;
 	--surface-1-border: #26282e;
 	--color-text: #eee;
-	
+
 	--blue-background: #4045ca;
 	--blue-text: #7e99fc;
 	--blue-text-hover: #8ea5f9;
+
+	--max-content-width: 90ch;
 	
 	font-family: var(--font-body);
 	color: var(--color-text);

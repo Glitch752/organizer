@@ -22,7 +22,7 @@
 
 <style lang="scss">
     nav {
-        grid-column: 2 / 3;
+        grid-column: -2 / -1;
         grid-row: 1 / -1;
 
         background-color: var(--surface-0);
