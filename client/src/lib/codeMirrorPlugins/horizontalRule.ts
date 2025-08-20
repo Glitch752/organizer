@@ -18,7 +18,6 @@ export function horizontalRulePlugin() {
                         node.name === "HorizontalRule" &&
                         !isCursorInRange(state, [node.from, node.to])
                     ) {
-                        widgets.push(invisibleDecoration.range(node.from, node.to));
                         widgets.push(
                             Decoration.line({
                                 class: "editor-line-hr",

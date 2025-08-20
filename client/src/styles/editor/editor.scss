@@ -213,10 +213,18 @@
     }
 
     .editor-line-hr {
-        margin-top: 1em;
-        margin-bottom: -1em;
+        position: relative;
+        color: transparent;
 
-        border-top: #4C4B4B solid 1px;
+        &::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            border-top: 1px solid #4C4B4B;
+        }
     }
 
     .editor-hr {
