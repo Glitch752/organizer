@@ -71,3 +71,66 @@ export function parse(language: Language, text: string): ParseTree {
     const tree = lezerToParseTree(text, language.parser.parse(text).topNode);
     return tree;
 }
+
+
+export function traverseTree(
+    tree: ParseTree,
+    // Return value = should stop traversal?
+    matchFn: (tree: ParseTree) => boolean,
+): void {
+    // Collect, but ignore the result
+    collectNodesMatching(tree, matchFn);
+}
+
+export function addParentPointers(tree: ParseTree) {
+    if(!tree.children) {
+        return;
+    }
+    for(const child of tree.children) {
+        if(child.parent) {
+            // Already added parent pointers before
+            return;
+        }
+        child.parent = tree;
+        addParentPointers(child);
+    }
+}
+
+export function removeParentPointers(tree: ParseTree) {
+    delete tree.parent;
+    if(!tree.children) return;
+    
+    for (const child of tree.children) {
+        removeParentPointers(child);
+    }
+}
+
+export function collectNodesOfType(
+    tree: ParseTree,
+    nodeType: string,
+): ParseTree[] {
+    return collectNodesMatching(tree, (n) => n.type === nodeType);
+}
+
+
+export function findNodeOfType(
+    tree: ParseTree,
+    nodeType: string,
+): ParseTree | null {
+    return collectNodesMatching(tree, (n) => n.type === nodeType)[0];
+}
+
+export function collectNodesMatching(
+    tree: ParseTree,
+    matchFn: (tree: ParseTree) => boolean,
+): ParseTree[] {
+    if(matchFn(tree)) return [tree];
+
+    let results: ParseTree[] = [];
+    if(tree.children) {
+        for (const child of tree.children) {
+            results = [...results, ...collectNodesMatching(child, matchFn)];
+        }
+    }
+    return results;
+}

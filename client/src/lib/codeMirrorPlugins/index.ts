@@ -1,5 +1,5 @@
 import { markdown } from "@codemirror/lang-markdown";
-import { extendedMarkdownLanguage } from "../markdownParser/parser";
+import { extendedMarkdownLanguage } from "../markdown/parser";
 import { autoCompletion } from "./autocompletion";
 import { disableSpellcheck } from "./spellcheck";
 import { LanguageDescription, LanguageSupport, syntaxHighlighting } from "@codemirror/language";
@@ -13,8 +13,10 @@ import { horizontalRulePlugin } from "./horizontalRule";
 import { cleanEscapePlugin } from "./escape";
 import { fencedCodePlugin } from "./fencedCode";
 import { hideHeaderMarkPlugin, hideMarksPlugin } from "./hideMark";
+import type { Client } from "../client";
+import { tablePlugin } from "./table";
 
-export function customPlugins(): Extension[] {
+export function customPlugins(client: Client): Extension[] {
     return [
         autoCompletion(),
 
@@ -53,7 +55,7 @@ export function customPlugins(): Extension[] {
         horizontalRulePlugin(),
         // linkPlugin(client),
         listBulletPlugin(),
-        // tablePlugin(client),
+        tablePlugin(client),
         // taskListPlugin({
         //     // TODO: Move this logic elsewhere?
         //     onCheckboxClick: (pos) => {

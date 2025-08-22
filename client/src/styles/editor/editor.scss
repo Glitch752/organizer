@@ -304,11 +304,11 @@
     }
 
     thead tr td {
-        padding: 11px 8px;
+        padding: 2px 8px;
     }
 
     th, td {
-        padding: 8px;
+        padding: 2px 8px;
         white-space: nowrap;
     }
 
@@ -387,7 +387,10 @@
     .editor-line-blockquote {
         background-color: var(--subtle-background-highlight);
         color: var(--subtle-text);
-        border-left: 1px solid #4a4a4a;
+        border-left: var(--border-thickness, 1px) solid #4a4a4a;
+        --left-padding: 8px;
+        margin-left: calc(var(--border-thickness, 1px) * -1 - var(--left-padding));
+        padding-left: var(--left-padding);
     }
 
     // Allow for cursor movement into a code widget fenced code block from bottom-up
@@ -405,10 +408,8 @@
     }
 
     .editor-admonition {
-        border-left-width: 4px !important;
-        border-left-style: solid;
+        --border-thickness: 4px;
         border-left-color: var(--admonition-color);
-        padding-left: 5px;
     }
 
     .editor-admonition-title {
@@ -466,11 +467,6 @@
         height: 1.1em;
         display: inline-flex;
         vertical-align: middle;
-    }
-
-    .cm-line:last-child {
-        // Give some breathing space at the bottom of the screen
-        padding-bottom: 20em;
     }
 
     .editor-emphasis {

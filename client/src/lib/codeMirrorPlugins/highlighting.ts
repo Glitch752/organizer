@@ -1,6 +1,6 @@
 import { HighlightStyle, syntaxTree } from "@codemirror/language";
 import { tagHighlighter, tags as t } from "@lezer/highlight";
-import * as ct from "../markdownParser/customTags";
+import * as ct from "../markdown/customTags";
 import { decoratorStateField } from "./util";
 import type { Range, EditorState } from "@codemirror/state";
 import { Decoration } from "@codemirror/view";
@@ -48,7 +48,6 @@ export function customMarkdownStyle() {
         { tag: t.processingInstruction, class: "editor-meta" },
         { tag: t.punctuation, class: "editor-punctuation" },
         { tag: ct.HorizontalRuleTag, class: "editor-hr" },
-        { tag: ct.HashtagTag, class: "editor-hashtag-text" },
         { tag: ct.NakedURLTag, class: "editor-naked-url" },
         { tag: ct.TaskDeadlineTag, class: "editor-task-deadline" },
         { tag: ct.SubscriptTag, class: "editor-sub" },

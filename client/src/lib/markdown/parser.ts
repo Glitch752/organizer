@@ -140,14 +140,6 @@ const NakedURL = regexParser({
     tag: ct.NakedURLTag,
 });
 
-const Hashtag = regexParser({
-    firstCharCode: 35, // #
-    regex: new RegExp(`^${tagRegex.source}`),
-    nodeType: "Hashtag",
-    className: "editor-hashtag-text",
-    tag: ct.HashtagTag,
-});
-
 export const extendedMarkdownLanguage = markdown({
     extensions: [
         WikiLink,
@@ -156,7 +148,6 @@ export const extendedMarkdownLanguage = markdown({
         Strikethrough,
         Table,
         NakedURL,
-        Hashtag,
         Superscript,
         Subscript,
         {
@@ -183,7 +174,6 @@ export const extendedMarkdownLanguage = markdown({
                     TableCell: t.content,
                     CodeInfo: ct.CodeInfoTag,
                     HorizontalRule: ct.HorizontalRuleTag,
-                    Hashtag: ct.HashtagTag,
                     NakedURL: ct.NakedURLTag,
                     DeadlineDate: ct.TaskDeadlineTag,
                     NamedAnchor: ct.NamedAnchorTag,

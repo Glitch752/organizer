@@ -103,7 +103,7 @@ export function decoratorStateField(
         },
         
         update(value: DecorationSet, tr: Transaction) {
-            if(tr.isUserEvent("select.pointer")) return value;
+            // if(tr.isUserEvent("select.pointer")) return value;
             return stateToDecoratorMapper(tr.state);
         },
         
@@ -136,12 +136,8 @@ export class ButtonWidget extends WidgetType {
 }
 
 /**
-* Check if two ranges overlap
-* Based on the visual diagram on https://stackoverflow.com/a/25369187
-* @param range1 - Range 1
-* @param range2 - Range 2
-* @returns True if the ranges overlap
-*/
+ * Check if two ranges overlap
+ */
 export function checkRangeOverlap(
     range1: [number, number],
     range2: [number, number],
@@ -150,11 +146,10 @@ export function checkRangeOverlap(
 }
 
 /**
-* Check if a range is inside another range
-* @param parent - Parent (bigger) range
-* @param child - Child (smaller) range
-* @returns True if child is inside parent
-*/
+ * Check if a range is inside another range
+ * @param parent - Parent (bigger) range
+ * @param child - Child (smaller) range
+ */
 export function checkRangeSubset(
     parent: [number, number],
     child: [number, number],
@@ -163,22 +158,15 @@ export function checkRangeSubset(
 }
 
 /**
-* Check if any of the editor cursors is in the given range
-* @param state - Editor state
-* @param range - Range to check
-* @returns True if the cursor is in the range
-*/
+ * Check if any of the editor cursors is in the given range
+ * @param state - Editor state
+ * @param range - Range to check
+ */
 export function isCursorInRange(state: EditorState, range: [number, number]) {
     return state.selection.ranges.some((selection) => checkRangeOverlap(range, [selection.from, selection.to]));
 }
 
 /**
-* Decoration to simply hide anything.
-*/
+ * Decoration to simply hide anything.
+ */
 export const invisibleDecoration = Decoration.replace({});
-
-// export function shouldRenderWidgets(client: Client) {
-//     const currentPageMeta = client.ui.viewState.current?.meta as PageMeta;
-//     return client.systemReady &&
-//     currentPageMeta?.pageDecoration?.renderWidgets !== false;
-// }

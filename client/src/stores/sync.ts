@@ -4,31 +4,18 @@ import { HocuspocusProvider } from "@hocuspocus/provider";
 import * as Y from "yjs";
 import { YTree, type TreeJsonStructure } from "../lib/ytree";
 import { writable } from "svelte/store";
-import { v4 as uuidv4 } from "uuid";
-
-// const userColors = [
-//     { color: "#30bced", light: "#30bced33" },
-//     { color: "#6eeb83", light: "#6eeb8333" },
-//     { color: "#ffbc42", light: "#ffbc4233" },
-//     { color: "#ecd444", light: "#ecd44433" },
-//     { color: "#ee6352", light: "#ee635233" },
-//     { color: "#9ac2c9", light: "#9ac2c933" },
-//     { color: "#8acb88", light: "#8acb8833" },
-//     { color: "#1be7ff", light: "#1be7ff33" }
-// ];
-
-// const userColor = userColors[Math.floor(Math.random() * userColors.length)];
-
-// remoteProvider.awareness.setLocalStateField('user', {
-//   name: `User${Math.floor(Math.random() * 100)}`,
-//   color: userColor.color,
-//   colorLight: userColor.light
-// });
+import { Awareness } from "y-protocols/awareness";
 
 const websocketURL = `ws${location.protocol === "https:" ? "s" : ""}://${location.host}/ws`;
 console.log(`Websocket URL: ${websocketURL}`);
 
-export function getDocument(id: string, loadedCallback: (() => void) | null = null) {
+export type DocSubscription = {
+    doc: Y.Doc,
+    awareness: Awareness,
+    disconnect(): void
+};
+
+export function getDocument(id: string, loadedCallback: (() => void) | null = null): DocSubscription {
     const doc = new Y.Doc();
     
     const localPersistence = new IndexeddbPersistence(id, doc);
@@ -81,5 +68,4 @@ export type PageType = TreeJsonStructure<PageValueType>;
 export const immutablePageTreeView = writable(pageTree.toJsonStructure());
 pageTree.setOnChange(() => {
     immutablePageTreeView.set(pageTree.toJsonStructure());
-    console.log(pageTree.toJsonStructure());
 });

@@ -21,19 +21,16 @@
 		display: grid;
 		grid-template-columns: 1fr 24rem;
 		grid-template-rows: auto 1fr;
-		min-height: 100vh;
+		height: 100vh;
 	}
 
 	main {
 		flex: 1;
-		display: flex;
-		flex-direction: column;
 		width: 100%;
-		max-width: 64rem;
-		margin: 0 auto;
-		box-sizing: border-box;
 
 		grid-column: 1;
 		grid-row: 2 / -1;
+
+		overflow-y: auto;
 	}
 </style>

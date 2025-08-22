@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { client } from "../lib/client";
     import { route } from "../stores/router";
     import Editor from "./Editor.svelte";
 
@@ -8,6 +9,6 @@
 
 {#if id}
     {#key id}
-        <Editor {id} />
+        <Editor {id} {client} />
     {/key}
 {/if}

@@ -7,7 +7,9 @@ import {
     isCursorInRange,
 } from "./util";
 
-import { lezerToParseTree, type ParseTree } from "../markdownParser/parseTree";
+import { lezerToParseTree, type ParseTree } from "../markdown/parseTree";
+import type { Client } from "../client";
+import { renderMarkdownToHtml, renderToText } from "../markdown/render";
 
 // import {
 //   isLocalPath,
@@ -28,9 +30,7 @@ class TableViewWidget extends WidgetType {
     }
     
     override get estimatedHeight(): number {
-        return this.client.getCachedWidgetHeight(
-            `table:${this.tableBodyText}`,
-        );
+        return this.client.getCachedWidgetHeight(`table:${this.tableBodyText}`);
     }
     
     toDOM(): HTMLElement {
@@ -40,43 +40,28 @@ class TableViewWidget extends WidgetType {
             // Pulling data-pos to put the cursor in the right place, falling back
             // to the start of the table.
             const dataAttributes = (e.target as any).dataset;
-            this.client.editorView.dispatch({
+            this.client.activePage?.editorView?.dispatch({
                 selection: {
                     anchor: dataAttributes.pos ? +dataAttributes.pos : this.pos,
                 },
             });
         });
         
-        const sf = LuaStackFrame.createWithGlobalEnv(
-            client.clientSystem.spaceLuaEnv.env,
-        );
-        expandMarkdown(
-            client,
-            this.t,
-            client.clientSystem.spaceLuaEnv.env,
-            sf,
-        ).then((t) => {
-            dom.innerHTML = renderMarkdownToHtml(t, {
-                // Annotate every element with its position so we can use it to put
-                // the cursor there when the user clicks on the table.
-                annotationPositions: true,
-                translateUrls: (url) => {
-                    if(isLocalPath(url)) {
-                        url = resolvePath(this.client.currentPage, decodeURI(url));
-                    }
-                    
-                    return url;
-                },
-                preserveAttributes: true,
-            });
-            setTimeout(() => {
-                // Give it a tick to render
-                this.client.setCachedWidgetHeight(
-                    `table:${this.tableBodyText}`,
-                    dom.clientHeight,
-                );
-            });
+        dom.innerHTML = renderMarkdownToHtml(this.t, {
+            // Annotate every element with its position so we can use it to put
+            // the cursor there when the user clicks on the table.
+            annotationPositions: true,
+            translateUrls: (url) => {
+                // TODO: we need to handle local paths here I guess
+                return url;
+            },
+            preserveAttributes: true,
         });
+        setTimeout(() => {
+            // Give it a tick to render
+            this.client.setCachedWidgetHeight(`table:${this.tableBodyText}`, dom.clientHeight);
+        });
+        
         return dom;
     }
     

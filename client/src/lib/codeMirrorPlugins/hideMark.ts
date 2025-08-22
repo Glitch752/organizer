@@ -13,8 +13,8 @@ import {
 } from "./util";
 
 /**
-* These types contain markers as child elements that can be hidden.
-*/
+ * These types contain markers as child elements that can be hidden.
+ */
 const typesWithMarks = [
     "Emphasis",
     "StrongEmphasis",
@@ -25,8 +25,8 @@ const typesWithMarks = [
     "Subscript",
 ];
 /**
-* The elements which are used as marks.
-*/
+ * The elements which are used as marks.
+ */
 const markTypes = [
     "EmphasisMark",
     "CodeMark",
