@@ -54,18 +54,3 @@ export function getDocument(id: string, loadedCallback: (() => void) | null = nu
         }
     };
 }
-
-const pagesDocument = getDocument("global");
-
-type PageValueType = {
-    id: string,
-    name: string
-};
-const pageTree = new YTree<PageValueType>(pagesDocument.doc.getMap("pages"));
-export const pagesRoot = pageTree.root();
-
-export type PageType = TreeJsonStructure<PageValueType>;
-export const immutablePageTreeView = writable(pageTree.toJsonStructure());
-pageTree.setOnChange(() => {
-    immutablePageTreeView.set(pageTree.toJsonStructure());
-});

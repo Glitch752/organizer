@@ -1,17 +1,18 @@
 <script lang="ts">
     import { route } from "../stores/router";
-    import type { PageType } from "../stores/sync";
+    import type { PageType } from "./client";
     import Self from "./NavRouteButton.svelte";
     const { page }: { page: PageType } = $props();
 
-    const active = $derived([route.onRoute("page", [page.value.id]), $route]);
+    const active = $derived([route.onRoute("page", [page.id]), $route]);
 </script>
 
 <li>
     <button
         class="blue monospace"
         class:active={active[0]}
-        onclick={() => route.navigate(`/page/${page.value.id}`)}
+        title={page.id}
+        onclick={() => route.navigate(`/page/${page.id}`)}
     >
         {page.value.name}
     </button>

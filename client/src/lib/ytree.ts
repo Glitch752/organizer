@@ -4,10 +4,6 @@ import { RadixPriorityQueueBuilder } from "./radixpq";
 // Adapted from y-sweet examples:
 // https://github.com/jamsocket/y-sweet/blob/main/examples/nextjs/src/app/(demos)/tree-crdt/ytree.ts
 
-function generateId(): string {
-    return Math.random().toString(36).slice(2);
-}
-
 const ROOT_ID = "__root";
 const PARENT_KEY = "parent";
 
@@ -25,6 +21,7 @@ type JsonMap = {
 };
 
 export type TreeJsonStructure<T extends object> = {
+    id: string;
     value: T;
     children: TreeJsonStructure<T>[]
 };
@@ -79,6 +76,15 @@ export class YTree<T extends object> {
      */
     public root(): YTreeNode<T> {
         return new YTreeNode(ROOT_ID, this);
+    }
+
+    /**
+     * Get a node by its ID.
+     */
+    public getNode(id: string | undefined): YTreeNode<T> | null {
+        if(!id) return null;
+        if(!this.structure.has(id)) return null;
+        return new YTreeNode(id, this);
     }
 
     /**
@@ -195,6 +201,7 @@ export class YTreeNode<T extends object> {
      */
     public toJsonStructure(): TreeJsonStructure<T> {
         return {
+            id: this._id,
             value: Object.fromEntries(
                 Array.from(this.tree.map.get(this._id)?.entries() ?? [])
                     .filter(([key]) => key !== PARENT_KEY)
@@ -227,6 +234,14 @@ export class YTreeNode<T extends object> {
     }
 
     /**
+     * Get the underlying map for this node.  
+     * Note that this map has internal state used to manage the tree structure.
+     */
+    public get map(): Y.Map<any> {
+        return this.tree.map.get(this._id)!;
+    }
+
+    /**
      * Get the children of the node.
      */
     public children(): YTreeNode<T>[] {
@@ -238,9 +253,8 @@ export class YTreeNode<T extends object> {
     /**
      * Add a child node with the given value to this node.
      */
-    addChild(values: Partial<T> = {}): YTreeNode<T> {
+    addChild(id: string, values: Partial<T> = {}): YTreeNode<T> {
         let nodeDataMap = new Y.Map<any>();
-        const id = generateId();
 
         let parentMap = new Y.Map();
         parentMap.set(this._id, ++this.tree.maxClock);

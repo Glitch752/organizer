@@ -1,7 +1,9 @@
 <script lang="ts">
   	import { route } from "../stores/router";
-    import { immutablePageTreeView } from "../stores/sync";
+  import { client } from "./client";
     import NavRouteButton from "./NavRouteButton.svelte";
+
+    const treeview = client.immutablePageTreeView;
 </script>
 
 <nav>
@@ -11,7 +13,7 @@
 
     </div>
     <ul>
-        {#each $immutablePageTreeView.sort((b, a) => {
+        {#each $treeview.sort((b, a) => {
             // Sort by name; the view is already sorted by ID, so ties are handled appropriately.
             return a.value.name.localeCompare(b.value.name);
         }) as page}

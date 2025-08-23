@@ -4,6 +4,8 @@ import { LimitedMap } from "./util/LimitedMap";
 import { debounce } from "./util/time";
 import type { EditorView } from "codemirror";
 import { SelectionCRDT } from "./selection";
+import { YTree, type TreeJsonStructure } from "./ytree";
+import { writable } from "svelte/store";
 
 type UserColor = {
     color: string,
@@ -21,6 +23,7 @@ const userColors: UserColor[] = [
 ];
 
 type EditorInfo = {
+    id: string,
     sub: DocSubscription,
     text: Y.Text,
     selection: SelectionCRDT,
@@ -28,13 +31,46 @@ type EditorInfo = {
     editorView: EditorView | null
 };
 
+type PageMeta = {
+    name: string
+};
+export type PageType = TreeJsonStructure<PageMeta>;
+
 export class Client {
     activePage: EditorInfo | null;
     sessionColor: UserColor;
 
+    private workspaceDocument = getDocument("global");
+    public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages"));
+    public pagesRoot = this.pageTree.root();
+    
+    public immutablePageTreeView = writable(this.pageTree.toJsonStructure());
+
     constructor() {
         this.sessionColor = userColors[Math.floor(Math.random() * userColors.length)];
         this.activePage = null;
+        
+        this.pageTree.setOnChange(() => {
+            this.immutablePageTreeView.set(this.pageTree.toJsonStructure());
+        });
+    }
+
+    /**
+     * Returns a map of the active page's attributes.
+     * Attributes are additional data added to a page used to connect organization systems.  
+     * For example, an attribute could be machine-generated like backlinks, or it could be manually
+     * input like a calendar item associated with this page.
+     */
+    get attributes(): Y.Map<any> | null {
+        return this.activePage ? this.activePage.sub.doc.getMap("attributes") : null;
+    }
+    /**
+     * Returns the metadata map of the active page.
+     * Metadata is data about the page itself, like its title or creation date.  
+     * This data is stored separately from the page content to allow for faster searching and indexing.
+     */
+    get metadata(): Y.Map<any> | null {
+        return this.pageTree.getNode(this.activePage?.id)?.map ?? null;
     }
 
     public loadPage(id: string, onLoad?: (() => void)): EditorInfo {
@@ -56,6 +92,7 @@ export class Client {
         });
 
         this.activePage = {
+            id,
             sub: doc,
             text: yText,
             selection: new SelectionCRDT(doc.doc.getMap("selection")),

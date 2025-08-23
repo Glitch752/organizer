@@ -3,7 +3,13 @@
 
 <header>
 	<div class="content-aligned">
-		<h1 contenteditable>Test title</h1>
+		<input
+			type="text"
+			class="title"
+			value="Test title"
+			aria-label="Title"
+			maxlength="100"
+		/>
 	</div>
 </header>
 
@@ -24,10 +30,14 @@
 		border-bottom: 2px solid var(--surface-1-border);
 	}
 
-	h1 {
+	.title {
 		margin: 0;
 		font-size: 1.5rem;
 		font-weight: normal;
+
+		border: none;
+		background-color: transparent;
+		color: var(--color-text);
 	}
 
 	.content-aligned {
