@@ -15,7 +15,7 @@
     <ul>
         {#each $treeview.sort((b, a) => {
             // Sort by name; the view is already sorted by ID, so ties are handled appropriately.
-            return a.value.name.localeCompare(b.value.name);
+            return b.value.name.localeCompare(a.value.name);
         }) as page}
             <NavRouteButton {page} />
         {/each}

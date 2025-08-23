@@ -1,4 +1,7 @@
 <script lang="ts">
+  	import { client } from "./client";
+
+	const title = client.title;
 </script>
 
 <header>
@@ -6,7 +9,7 @@
 		<input
 			type="text"
 			class="title"
-			value="Test title"
+			bind:value={$title}
 			aria-label="Title"
 			maxlength="100"
 		/>
@@ -15,12 +18,6 @@
 
 <style lang="scss">
 	header {
-		display: grid;
-		flex-direction: column;
-		justify-content: space-between;
-
-		grid-template-columns: subgrid;
-
 		grid-column: 1 / -2;
 		grid-row: 1 / 2;
 
@@ -30,17 +27,28 @@
 		border-bottom: 2px solid var(--surface-1-border);
 	}
 
+
+	.content-aligned {
+		display: flex;
+		flex-direction: row;
+
+		margin: 0 auto;
+		padding: 0 1rem;
+		width: var(--max-content-width);
+	}
+
 	.title {
 		margin: 0;
 		font-size: 1.5rem;
 		font-weight: normal;
 
+		text-overflow: ellipsis;
+
 		border: none;
+		outline: none;
 		background-color: transparent;
 		color: var(--color-text);
-	}
 
-	.content-aligned {
-		grid-column: 2;
+		flex: 1;
 	}
 </style>

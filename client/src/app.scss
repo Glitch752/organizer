@@ -37,6 +37,9 @@ body {
 	margin: 0;
 
 	background-color: var(--background);
+
+	scrollbar-width: thin;
+	scrollbar-color: var(--surface-1) var(--background);
 }
 
 

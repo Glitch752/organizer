@@ -5,7 +5,8 @@ import { debounce } from "./util/time";
 import type { EditorView } from "codemirror";
 import { SelectionCRDT } from "./selection";
 import { YTree, type TreeJsonStructure } from "./ytree";
-import { writable } from "svelte/store";
+import { writable, type Writable } from "svelte/store";
+import type { YMap } from "./yjsFixes";
 
 type UserColor = {
     color: string,
@@ -40,7 +41,7 @@ export class Client {
     activePage: EditorInfo | null;
     sessionColor: UserColor;
 
-    private workspaceDocument = getDocument("global");
+    private workspaceDocument = getDocument("global", this.resubscribeMeta.bind(this));
     public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages"));
     public pagesRoot = this.pageTree.root();
     
@@ -61,7 +62,7 @@ export class Client {
      * For example, an attribute could be machine-generated like backlinks, or it could be manually
      * input like a calendar item associated with this page.
      */
-    get attributes(): Y.Map<any> | null {
+    get attributes(): YMap<any> | null {
         return this.activePage ? this.activePage.sub.doc.getMap("attributes") : null;
     }
     /**
@@ -69,9 +70,96 @@ export class Client {
      * Metadata is data about the page itself, like its title or creation date.  
      * This data is stored separately from the page content to allow for faster searching and indexing.
      */
-    get metadata(): Y.Map<any> | null {
+    get metadata(): YMap<any> | null {
         return this.pageTree.getNode(this.activePage?.id)?.map ?? null;
     }
+
+    private metadataStores = new Map<string, {
+        writable: Writable<any>,
+        resubscribe: () => void
+    }>();
+
+    /**
+     * Gets a Svelte writable for a metadata item of the active page.
+     * The store will update when the metadata changes, and all stores will be updated to reflect
+     * the active page.
+     */
+    private writableMetadataItem<T>(key: keyof PageMeta): Writable<T | undefined> | null {
+        if(this.metadataStores.has(key)) {
+            return this.metadataStores.get(key)?.writable as Writable<T>;
+        }
+
+        const meta = this.metadata;
+        
+        const store = writable<T | undefined>(meta?.get(key) as T | undefined);
+        
+        // Keep references so we can unsubscribe when resubscribing
+        let currentMeta: YMap<any> | null = this.metadata;
+        let currentPageId: string | null = this.activePage?.id ?? null;
+
+        // Unsubscription function for the meta map
+        let metaObserver: ((event: Y.YMapEvent<T>, transaction: Y.Transaction) => void) | null = null;
+        // Unsubscription function for the store
+        let storeUnsub: (() => void) | null = null;
+        let suppressLocal = false;
+        // Technically could lead to race conditions, but very unlikely in practice
+        const stopSuppressLocal = debounce(() => suppressLocal = false, 10);
+
+        const resubscribe = () => {
+            // Clean up previous observers
+            try {
+                if(metaObserver && currentMeta) {
+                    currentMeta.unobserve(metaObserver);
+                    metaObserver = null;
+                }
+                if(storeUnsub) {
+                    storeUnsub();
+                    storeUnsub = null;
+                }
+            } catch {}
+
+            // Update references to the currently active page/meta
+            currentMeta = this.metadata;
+            currentPageId = this.activePage?.id ?? null;
+
+            if(!currentMeta || currentPageId === null) {
+                // No active page; clear store
+                store.set(undefined);
+                return;
+            }
+
+            // Initialize store value from current meta
+            store.set(currentMeta.get(key) as T);
+
+            // Yjs changes to local store
+            metaObserver = (event: any) => {
+                if(!currentMeta) return;
+                if(this.activePage?.id === currentPageId && this.metadata === currentMeta && event.keysChanged && event.keysChanged.has(key)) {
+                    suppressLocal = true;
+                    store.set(currentMeta.get(key) as T);
+                    stopSuppressLocal();
+                }
+            };
+            currentMeta.observe(metaObserver);
+            
+            // Local store changes back to Yjs
+            storeUnsub = store.subscribe(value => {
+                if(!currentMeta || suppressLocal) return;
+                if(this.activePage?.id === currentPageId && this.metadata === currentMeta) {
+                    currentMeta.set(key, value);
+                }
+            });
+        };
+        resubscribe();
+
+        this.metadataStores.set(key, {
+            writable: store,
+            resubscribe
+        });
+        return store;
+    }
+
+    public title = this.writableMetadataItem<string>("name");
 
     public loadPage(id: string, onLoad?: (() => void)): EditorInfo {
         if(this.activePage !== null) {
@@ -99,7 +187,14 @@ export class Client {
             undoManager,
             editorView: null
         };
+
+        this.resubscribeMeta();
+        
         return this.activePage;
+    }
+
+    private resubscribeMeta() {
+        for(const { resubscribe } of this.metadataStores.values()) resubscribe();
     }
 
     private widgetHeightCache = new LimitedMap<number>(JSON.parse(localStorage.getItem("widgetHeightCache") ?? "{}"));

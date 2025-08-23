@@ -1,5 +1,6 @@
 import * as Y from "yjs";
 import { RadixPriorityQueueBuilder } from "./radixpq";
+import type { YMap } from "./yjsFixes";
 
 // Adapted from y-sweet examples:
 // https://github.com/jamsocket/y-sweet/blob/main/examples/nextjs/src/app/(demos)/tree-crdt/ytree.ts
@@ -40,17 +41,16 @@ export class YTree<T extends object> {
      */
     private onChange?: () => void = () => { };
     /**
-     * The underlying Y.Map that stores the tree data.
-     * This is a map from node ID to a Y.Map with the following keys:
-     * - parent: Y.Map<string, number> - a map from parent ID to clock value
+     * The underlying YMap that stores the tree data.
+     * This is a map from node ID to a YMap with the following keys:
+     * - parent: YMap<string, number> - a map from parent ID to clock value
      * - value: any - the value of the node
      */
-    public map: Y.Map<Y.Map<any>>;
+    public map: YMap<YMap<any>>;
 
-    constructor(map: Y.Map<Y.Map<any>>) {
-        this.map = map;
-        // @ts-ignore ??? yes it does exist
-        this.map.observeDeep((e) => {
+    constructor(map: YMap<YMap<any>>) {
+        this.map = map as YMap<YMap<any>>;
+        this.map.observeDeep((e, t) => {
             this.updateChildren();
         });
         this.updateChildren();
@@ -88,7 +88,7 @@ export class YTree<T extends object> {
     }
 
     /**
-     * Rebuild the tree structure from the underlying Y.Map.
+     * Rebuild the tree structure from the underlying YMap.
      */
     private updateChildren() {
         let map = this.map.toJSON();
@@ -103,7 +103,7 @@ export class YTree<T extends object> {
     }
 
     /**
-     * Build a tree structure from a JSON representation of the Y.Map.
+     * Build a tree structure from a JSON representation of the YMap.
      * @returns 
      */
     private static buildTree(map: JsonMap): [Map<string, NodeRelations>, number] {
@@ -237,7 +237,7 @@ export class YTreeNode<T extends object> {
      * Get the underlying map for this node.  
      * Note that this map has internal state used to manage the tree structure.
      */
-    public get map(): Y.Map<any> {
+    public get map(): YMap<any> {
         return this.tree.map.get(this._id)!;
     }
 
@@ -254,7 +254,7 @@ export class YTreeNode<T extends object> {
      * Add a child node with the given value to this node.
      */
     addChild(id: string, values: Partial<T> = {}): YTreeNode<T> {
-        let nodeDataMap = new Y.Map<any>();
+        let nodeDataMap = new Y.Map<any>() as YMap<any>;
 
         let parentMap = new Y.Map();
         parentMap.set(this._id, ++this.tree.maxClock);
