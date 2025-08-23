@@ -5,6 +5,8 @@ import * as Y from 'yjs';
  * but are missing from the TypeScript definitions (for some reason)
  */
 export interface YMap<T> extends Y.Map<T> {
+    doc: Y.Doc;
+    
     observe(f: (event: Y.YMapEvent<T>, transaction: Y.Transaction) => void): void;
     unobserve(f: (event: Y.YMapEvent<T>, transaction: Y.Transaction) => void): void;
     observeDeep(f: (events: Array<Y.YEvent<any>>, transaction: Y.Transaction) => void): void;

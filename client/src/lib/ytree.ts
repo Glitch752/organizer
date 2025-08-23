@@ -90,7 +90,7 @@ export class YTree<T extends object> {
     /**
      * Rebuild the tree structure from the underlying YMap.
      */
-    private updateChildren() {
+    public updateChildren() {
         let map = this.map.toJSON();
 
         let [structure, maxClock] = YTree.buildTree(map);
@@ -276,7 +276,6 @@ export class YTreeNode<T extends object> {
             return;
         }
 
-        // @ts-ignore yes doc exists
         this.tree.map.doc!.transact(() => {
             let oldParent = this.tree.structure.get(this._id)!.parent!;
 
@@ -305,6 +304,7 @@ export class YTreeNode<T extends object> {
                 .get(this._id)!
                 .get(PARENT_KEY)
                 .set(newParent.id(), ++this.tree.maxClock);
+            this.tree.updateChildren();
         });
     }
 }

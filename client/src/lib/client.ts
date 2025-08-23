@@ -43,7 +43,6 @@ export class Client {
 
     private workspaceDocument = getDocument("global", this.resubscribeMeta.bind(this));
     public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages"));
-    public pagesRoot = this.pageTree.root();
     
     public immutablePageTreeView = writable(this.pageTree.toJsonStructure());
 
