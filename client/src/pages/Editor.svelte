@@ -11,7 +11,7 @@
     import { customPlugins } from "../lib/codeMirrorPlugins";
     import "../styles/editor/editor.scss";
     import type { Client } from "../lib/client";
-  import { pageAttributes } from "../lib/codeMirrorPlugins/pageAttributes";
+    import { pageAttributes } from "../lib/codeMirrorPlugins/pageAttributes";
 
     const { id, client }: { id: string, client: Client } = $props();
     
@@ -59,9 +59,7 @@
 
                 // Update selection whenever our selection changes
                 EditorView.updateListener.of((v) => {
-                    if(v.selectionSet) {
-                        selection.selection = v.state.selection;
-                    }
+                    if(v.selectionSet) selection.selection = v.state.selection;
                 }),
 
                 // Update scroll position when the dom event fires

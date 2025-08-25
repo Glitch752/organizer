@@ -6,16 +6,31 @@ export enum AttributeType {
 export const attributeTypes: {
     [type in AttributeType]: {
         name: string,
-        description: string
+        description: string,
+        default: () => (Attribute & {
+            type: type
+        })
     }
 } = {
     [AttributeType.CalendarEvent]: {
         name: "Calendar Event",
-        description: "An event with a specific start and end time."
+        description: "An event with a specific start and end time.",
+        default: () => ({
+            type: AttributeType.CalendarEvent,
+            title: "",
+            enabled: true,
+            times: []
+        })
     },
     [AttributeType.CalendarDeadline]: {
         name: "Calendar Deadline",
-        description: "A deadline that must be met by a specific time."
+        description: "A deadline that must be met by a specific time.",
+        default: () => ({
+            type: AttributeType.CalendarDeadline,
+            title: "",
+            enabled: true,
+            due: new Date().toISOString()
+        })
     }
 };
 
@@ -35,38 +50,50 @@ export type EventCondition = {
     date: DateOnly
 } | {
     type: "dayOfWeek",
-    days: number[] // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    /** 0 = Sunday, 1 = Monday, ..., 6 = Saturday */
+    days: number[]
 } | {
     type: "month",
-    months: number[] // 1 = January, 2 = February, ..., 12 = December
+    /** 1 = January, 2 = February, ..., 12 = December */
+    months: number[]
 } | {
     type: "year",
-    years: number[] // e.g. 2024, 2025, etc.
+    /** e.g. 2024, 2025, etc. */
+    years: number[]
 } | {
     type: "dayOfMonth",
-    days: number[] // 1 to 31
+    /** 1 to 31 */
+    days: number[]
 } | {
     type: "weekOfMonth",
-    weeks: number[] // 1 to 5
+    /** 1 to 5 */
+    weeks: number[]
 } | {
     type: "dayOfYear",
-    days: DayOfYearOnly[] // MM-DD format
+    /** MM-DD format */
+    days: DayOfYearOnly[]
 } | {
     type: "weekOfYear",
-    weeks: number[] // 1 to 53
+    /** 1 to 53 */
+    weeks: number[]
 };
 
 export type EventTime = {
     type: "single",
+    /** Date/time */
     start: DateTime,
+    /** Date/time */
     end: DateTime
 } | {
     type: "recurring",
+    /** Time only */
     start: TimeOnly,
+    /** Time only */
     end: TimeOnly,
     condition: EventCondition
 } | {
     type: "allDay",
+    /** Date only */
     date: DateOnly
 } | {
     type: "allDayRecurring",
@@ -75,10 +102,13 @@ export type EventTime = {
 
 export type Attribute = {
     type: AttributeType.CalendarEvent,
+    title: string,
     enabled: boolean,
     times: EventTime[]
 } | {
     type: AttributeType.CalendarDeadline,
+    title: string,
     enabled: boolean,
+    /** Date/time */
     due: DateTime
 };

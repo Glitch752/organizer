@@ -1,10 +1,9 @@
 import { IndexeddbPersistence } from "y-indexeddb";
-// import { WebsocketProvider } from "y-websocket";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import * as Y from "yjs";
-import { YTree, type TreeJsonStructure } from "../lib/ytree";
-import { writable } from "svelte/store";
 import { Awareness } from "y-protocols/awareness";
+import type { YArray, YMap } from "../lib/yjsFixes";
+import { writable, type Writable } from "svelte/store";
 
 const websocketURL = `ws${location.protocol === "https:" ? "s" : ""}://${location.host}/ws`;
 console.log(`Websocket URL: ${websocketURL}`);

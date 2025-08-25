@@ -42,7 +42,20 @@ export class Client {
     activePage: EditorInfo | null;
     sessionColor: UserColor;
 
-    private workspaceDocument = getDocument("global", this.resubscribeMeta.bind(this));
+    public workspaceLoaded = false;
+    private workspaceLoadCallbacks: (() => void)[] = [];
+    public onWorkspaceLoaded(cb: () => void) {
+        if(this.workspaceLoaded) cb();
+        else this.workspaceLoadCallbacks.push(cb);
+    }
+
+    private workspaceDocument = getDocument("global", () => {
+        this.resubscribeMeta();
+        this.workspaceLoaded = true;
+        for(const cb of this.workspaceLoadCallbacks) cb();
+        this.workspaceLoadCallbacks = [];
+    });
+
     public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages"));
 
     private attributesMap = this.workspaceDocument.doc.getMap("attributes");
@@ -66,6 +79,8 @@ export class Client {
      */
     get attributes(): YArray<Attribute> | null {
         if(!this.activePage?.id) return null;
+        if(!this.workspaceLoaded) return null;
+        
         if(!this.attributesMap.has(this.activePage.id)) {
             this.attributesMap.set(this.activePage.id, new Y.Array());
         }

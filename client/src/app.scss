@@ -51,6 +51,7 @@ button {
 	font-size: 1rem;
 	color: var(--color-text);
 	cursor: pointer;
+	outline: none;
 
 	transition: background-color 50ms, border-color 50ms, color 50ms;
 
@@ -64,5 +65,43 @@ button {
 		background-color: var(--blue-background);
 		border-color: var(--blue-background);
 		color: var(--color-text);
+	}
+
+	&:focus-visible {
+		border-color: var(--blue-text) !important;
+	}
+}
+
+input[type="checkbox"] {
+	width: 1.5em;
+	height: 1.5em;
+	box-sizing: content-box;
+	appearance: none;
+	position: relative;
+	outline: none;
+
+	&:focus-visible::before {
+		border: var(--blue-text) 2px solid;
+	}
+	&::before {
+		content: "";
+		display: block;
+		width: 100%;
+		height: 100%;
+		background-color: var(--surface-1);
+		border: var(--surface-1-border) 2px solid;
+		border-radius: 5px;
+	}
+	&:checked::after {
+		content: "";
+		display: block;
+		position: absolute;
+		top: 4px;
+		left: 4px;
+		bottom: 4px;
+		aspect-ratio: 1;
+		border-radius: 3px;
+		background-color: var(--blue-text);
+		text-align: center;
 	}
 }

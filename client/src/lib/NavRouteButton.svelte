@@ -121,7 +121,6 @@
     button {
         padding: 0 0.25rem;
         text-align: left;
-        margin-right: auto;
 
         &.dragging-over {
             background-color: var(--accent-color-alpha);
