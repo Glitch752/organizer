@@ -6,7 +6,8 @@ import type { EditorView } from "codemirror";
 import { SelectionCRDT } from "./selection";
 import { YTree, type TreeJsonStructure } from "./ytree";
 import { writable, type Writable } from "svelte/store";
-import type { YMap } from "./yjsFixes";
+import type { YArray, YMap } from "./yjsFixes";
+import type { Attribute } from "./attributes";
 
 type UserColor = {
     color: string,
@@ -23,7 +24,7 @@ const userColors: UserColor[] = [
     { color: '#1be7ff', light: '#1be7ff33' }
 ];
 
-type EditorInfo = {
+export type EditorInfo = {
     id: string,
     sub: DocSubscription,
     text: Y.Text,
@@ -43,6 +44,8 @@ export class Client {
 
     private workspaceDocument = getDocument("global", this.resubscribeMeta.bind(this));
     public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages"));
+
+    private attributesMap = this.workspaceDocument.doc.getMap("attributes");
     
     public immutablePageTreeView = writable(this.pageTree.toJsonStructure());
 
@@ -57,12 +60,17 @@ export class Client {
 
     /**
      * Returns a map of the active page's attributes.
-     * Attributes are additional data added to a page used to connect organization systems.  
+     * Attributes are additional data linked to pages used to connect organization systems.  
      * For example, an attribute could be machine-generated like backlinks, or it could be manually
      * input like a calendar item associated with this page.
      */
-    get attributes(): YMap<any> | null {
-        return this.activePage ? this.activePage.sub.doc.getMap("attributes") : null;
+    get attributes(): YArray<Attribute> | null {
+        if(!this.activePage?.id) return null;
+        if(!this.attributesMap.has(this.activePage.id)) {
+            this.attributesMap.set(this.activePage.id, new Y.Array());
+        }
+
+        return this.attributesMap.get(this.activePage?.id);
     }
     /**
      * Returns the metadata map of the active page.

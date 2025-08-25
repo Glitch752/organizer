@@ -55,7 +55,7 @@
     }
 
     function handleDragLeave(event: DragEvent) {
-        // Only clear if we're truly leaving this element
+        // Only clear if we're actually leaving this element
         const relatedTarget = event.relatedTarget as HTMLElement;
         const currentTarget = event.currentTarget as HTMLElement;
         

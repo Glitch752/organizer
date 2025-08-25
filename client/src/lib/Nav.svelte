@@ -58,7 +58,7 @@
     function handleRootDragLeave(event: DragEvent) {
         // Only clear if we're actually leaving the root area
         const target = event.target as HTMLElement;
-        if (target.classList.contains('root-drop-zone')) {
+        if(target.classList.contains('root-drop-zone')) {
             dragState.update(state => ({
                 ...state,
                 dragOverPageId: null,
@@ -72,7 +72,6 @@
     <button class="blue" class:active={$route == "/calendar"} onclick={() => route.navigate("/calendar")}>Calendar</button>
     <div class="separator"></div>
     <div class="controls">
-
     </div>
     <ul>
         {#each $treeview.sort((b, a) => {

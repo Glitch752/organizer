@@ -11,6 +11,7 @@
     import { customPlugins } from "../lib/codeMirrorPlugins";
     import "../styles/editor/editor.scss";
     import type { Client } from "../lib/client";
+  import { pageAttributes } from "../lib/codeMirrorPlugins/pageAttributes";
 
     const { id, client }: { id: string, client: Client } = $props();
     
@@ -26,6 +27,8 @@
         const state = EditorState.create({
             doc: yText.toString(),
             extensions: [
+                pageAttributes(client),
+
                 highlightSpecialChars(),
                 history(),
                 

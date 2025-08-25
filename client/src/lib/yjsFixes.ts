@@ -12,3 +12,16 @@ export interface YMap<T> extends Y.Map<T> {
     observeDeep(f: (events: Array<Y.YEvent<any>>, transaction: Y.Transaction) => void): void;
     unobserveDeep(f: (events: Array<Y.YEvent<any>>, transaction: Y.Transaction) => void): void;
 }
+
+/**
+ * Extended YArray interface that includes observer methods that exist at runtime
+ * but are missing from the TypeScript definitions (for some reason)
+ */
+export interface YArray<T> extends Y.Array<T> {
+    doc: Y.Doc;
+    
+    observe(f: (event: Y.YArrayEvent<T>, transaction: Y.Transaction) => void): void;
+    unobserve(f: (event: Y.YArrayEvent<T>, transaction: Y.Transaction) => void): void;
+    observeDeep(f: (events: Array<Y.YEvent<any>>, transaction: Y.Transaction) => void): void;
+    unobserveDeep(f: (events: Array<Y.YEvent<any>>, transaction: Y.Transaction) => void): void;
+}
