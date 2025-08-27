@@ -24,5 +24,23 @@ Here are some non-goals of this project:
 
 If others begin using this application and are interested in implementing these non-goals, however, I would accept pull requests!
 
+## TODO
+- [ ] Mobile responsiveness
+- [ ] Authentication
+- [ ] Calendar functionality
+  - [ ] Day, week, month, and year views
+  - [ ] Event visualization
+  - [ ] Deadline visualization
+  - [ ] Server-side CalDAV integration?
+- [ ] Better page links
+  - [ ] Backlinks
+- [ ] Better server WS connection
+- [ ] Nav folding
+- [ ] Plugin system
+- [ ] Multi-workspace functionality
+- [ ] Import/export
+- [ ] Command palette
+- [ ] Full search
+
 ## Inspiration
 - [Silverbullet](https://github.com/silverbulletmd/silverbullet). I love Silverbullet's flexibility and visual editor, but I've had issues with syncronization and would like to build something more tailored for my needs.

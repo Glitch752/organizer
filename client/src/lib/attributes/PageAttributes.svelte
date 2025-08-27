@@ -3,6 +3,8 @@
     import { attributeTypes } from ".";
     import type { Client } from "../client";
     import AttributeDisplay from "./AttributeDisplay.svelte";
+    import { fly } from "svelte/transition";
+    import { easeInOutQuad } from "../util/time";
 
     const { client }: { client: Client } = $props();
 
@@ -53,7 +55,7 @@
 {/each}
 <button class="add" title="Add attribute" onclick={() => adding = !adding}>+</button>
 {#if adding}
-    <ul class="options">
+    <ul class="options" transition:fly={{ duration: 150, easing: easeInOutQuad, y: -15 }}>
         {#each Object.entries(attributeTypes) as [type, data]}
             <li>
                 <button onclick={() => {

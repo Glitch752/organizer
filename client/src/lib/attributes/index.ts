@@ -29,7 +29,8 @@ export const attributeTypes: {
             type: AttributeType.CalendarDeadline,
             title: "",
             enabled: true,
-            due: new Date().toISOString()
+            /** Current date/time in UTC... somehow? why is JS like this */
+            due: new Date(new Date().toISOString().split(".")[0] + "Z").toISOString()
         })
     }
 };

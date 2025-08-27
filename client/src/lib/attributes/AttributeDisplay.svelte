@@ -76,16 +76,6 @@ label {
 
     input[type=text] {
         flex: 1;
-        background-color: var(--surface-1);
-        border-radius: 5px;
-        border: 2px solid var(--surface-1-border);
-        outline: none;
-        padding: 0.25rem 0.5rem;
-        color: var(--color-text);
-
-        &:focus-within {
-            border-color: var(--blue-text);
-        }
     }
 }
 
