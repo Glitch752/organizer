@@ -40,36 +40,36 @@
 }} />
 
 <div class="attributes">
-{#each attributes as attribute, i}
-    <AttributeDisplay data={attribute} onchange={(data) => {
-        if(!attributeArray) return;
-        attributeArray.doc.transact(() => {
+    {#each attributes as attribute, i}
+        <AttributeDisplay data={attribute} onchange={(data) => {
+            if(!attributeArray) return;
+            attributeArray.doc.transact(() => {
+                if(!attributeArray) return;
+                attributeArray.delete(i);
+                attributeArray.insert(i, [data]);
+            });
+        }} onremove={() => {
             if(!attributeArray) return;
             attributeArray.delete(i);
-            attributeArray.insert(i, [data]);
-        });
-    }} onremove={() => {
-        if(!attributeArray) return;
-        attributeArray.delete(i);
-    }} />
-{/each}
-<button class="add" title="Add attribute" onclick={() => adding = !adding}>+</button>
-{#if adding}
-    <ul class="options" transition:fly={{ duration: 150, easing: easeInOutQuad, y: -15 }}>
-        {#each Object.entries(attributeTypes) as [type, data]}
-            <li>
-                <button onclick={() => {
-                    if(!attributeArray) return;
-                    attributeArray.push([ data.default() ]);
-                    adding = false;
-                }}>
-                    <em>{data.name}</em>
-                    <small>{data.description}</small>
-                </button>
-            </li>
-        {/each}
-    </ul>
-{/if}
+        }} />
+    {/each}
+    <button class="add" title="Add attribute" onclick={() => adding = !adding}>+</button>
+    {#if adding}
+        <ul class="options" transition:fly={{ duration: 150, easing: easeInOutQuad, y: -15 }}>
+            {#each Object.entries(attributeTypes) as [type, data]}
+                <li>
+                    <button onclick={() => {
+                        if(!attributeArray) return;
+                        attributeArray.push([ data.default() ]);
+                        adding = false;
+                    }}>
+                        <em>{data.name}</em>
+                        <small>{data.description}</small>
+                    </button>
+                </li>
+            {/each}
+        </ul>
+    {/if}
 </div>
 
 <style>

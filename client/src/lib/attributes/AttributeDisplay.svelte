@@ -1,6 +1,7 @@
 <script lang="ts">
     import { AttributeType, attributeTypes, type Attribute } from ".";
-  import DateTimeInput from "./DateTimeInput.svelte";
+    import CalendarEventTimes from "./CalendarEventTimes.svelte";
+    import DateTimeInput from "./DateTimeInput.svelte";
 
     const { data, onchange, onremove }: {
         data: Attribute,
@@ -22,6 +23,7 @@
     <label>
         Enabled <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
     </label>
+    <CalendarEventTimes bind:times={data.times} onchange={() => onchange(data)} />
     {:else if data.type === AttributeType.CalendarDeadline}
     <label>
         Title <input type="text" bind:value={data.title} onchange={() => onchange(data)} />

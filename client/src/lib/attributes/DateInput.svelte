@@ -1,26 +1,23 @@
 <script lang="ts">
-    import type { DateTime } from ".";
+    import type { DateOnly, DateTime } from ".";
     import { fly } from "svelte/transition";
     import { easeInOutQuad } from "../util/time";
     import DatePicker from "./DatePicker.svelte";
-    import TimePicker from "./TimePicker.svelte";
-    import { parseFuzzyDateTime } from "./fuzzyDate";
+    import { parseFuzzyDate } from "./fuzzyDate";
 
     let { value = $bindable(), onchange }: {
-        value: DateTime,
+        value: DateOnly,
         onchange: () => void
     } = $props();
 
-    function formatDatetime(value: DateTime) {
-        const date = new Date(value);
+    function formatDate(value: DateOnly) {
+        // We split it manually since we want to create a date in our timezone, not UTC
+        const date = new Date(value.split('T')[0] + 'T00:00:00');
         return date.toLocaleString(undefined, {
             weekday: "short",
             year: "numeric",
             month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            timeZoneName: "shortGeneric"
+            day: "numeric"
         });
     }
 
@@ -28,19 +25,19 @@
 
     function windowClick(e: MouseEvent) {
         const target = e.target as HTMLElement;
-        if(pickerOpen && !target.closest(".picker") && !target.closest(".datetime-input")) {
+        if(pickerOpen && !target.closest(".picker") && !target.closest(".date-input")) {
             pickerOpen = false;
         }
     }
 
-    let interpretInputDate = $state(formatDatetime(value));
+    let interpretInputDate = $state(formatDate(value));
 </script>
 
 <svelte:window onclick={windowClick} />
 
 <div>
-    <button onclick={() => pickerOpen = !pickerOpen} class="datetime-input" title={value}>
-        {formatDatetime(value)}
+    <button onclick={() => pickerOpen = !pickerOpen} class="date-input" title={value}>
+        {formatDate(value)}
     </button>
 
     {#if pickerOpen}
@@ -53,26 +50,24 @@
             <div class="interpret">
                 <input type="text" bind:value={interpretInputDate} />
                 <button onclick={() => {
-                    const date = parseFuzzyDateTime(interpretInputDate);
-                    if(date && date.isoUTC) {
-                        value = date.isoUTC;
+                    const date = parseFuzzyDate(interpretInputDate);
+                    if(date && date.dateString) {
+                        value = date.dateString;
                         onchange();
-                        interpretInputDate = formatDatetime(value);
+                        interpretInputDate = formatDate(value);
                     }
                 }}>Set</button>
             </div>
             <svelte:boundary>
-                {@const date = parseFuzzyDateTime(interpretInputDate)}
-                {#if date && date.isoUTC}
-                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatDatetime(date.isoUTC)}</span>
+                {@const date = parseFuzzyDate(interpretInputDate)}
+                {#if date && date.dateString}
+                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatDate(date.dateString)}</span>
                 {:else}
                     <span class="could-not-interpret">Could not interpret date</span>
                 {/if}
             </svelte:boundary>
             <hr />
             <DatePicker bind:value onchange={() => { onchange(); }} />
-            <hr />
-            <TimePicker bind:value onchange={() => { onchange(); }} />
         </dialog>
     {/if}
 </div>

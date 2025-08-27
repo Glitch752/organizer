@@ -38,7 +38,7 @@ export const attributeTypes: {
 export type DateTime = string; // ISO 8601 format with UTC - e.g. YYYY-MM-DDTHH:MM:SSZ
 export type DateOnly = string; // YYYY-MM-DD format
 export type DayOfYearOnly = string; // MM-DD format
-export type TimeOnly = string; // THH:MM:SS format with UTC
+export type TimeOnly = string; // THH:MM:SS format with no timezone offset; we always use the local timezone for times
 
 export type EventCondition = {
     type: "not",
@@ -79,25 +79,84 @@ export type EventCondition = {
     weeks: number[]
 };
 
+export enum TimeType {
+    Single = "single",
+    Recurring = "recurring",
+    AllDay = "allDay",
+    AllDayRecurring = "allDayRecurring"
+}
+
+export const timeTypes: {
+    [type in TimeType]: {
+        name: string,
+        description: string,
+        default: () => (EventTime & {
+            type: type
+        })
+    }
+} = {
+    [TimeType.Single]: {
+        name: "Single",
+        description: "A one-time event with a specific start and end time.",
+        default: () => ({
+            type: TimeType.Single,
+            start: new Date(new Date().toISOString().split(".")[0] + "Z").toISOString(),
+            end: new Date(new Date().toISOString().split(".")[0] + "Z").toISOString()
+        })
+    },
+    [TimeType.Recurring]: {
+        name: "Recurring",
+        description: "An event that recurs at the same time on specified days.",
+        default: () => ({
+            type: TimeType.Recurring,
+            start: "T09:00:00",
+            end: "T10:00:00",
+            condition: {
+                type: "dayOfWeek",
+                days: [1, 3, 5] // Monday, Wednesday, Friday
+            }
+        })
+    },
+    [TimeType.AllDay]: {
+        name: "All Day",
+        description: "A one-time event that lasts all day.",
+        default: () => ({
+            type: TimeType.AllDay,
+            date: new Date().toISOString().split("T")[0] // Current date in YYYY-MM-DD format
+        })
+    },
+    [TimeType.AllDayRecurring]: {
+        name: "All Day Recurring",
+        description: "An event that recurs all day on specified dates or patterns.",
+        default: () => ({
+            type: TimeType.AllDayRecurring,
+            condition: {
+                type: "month",
+                months: [1] // January
+            }
+        })
+    }
+};
+
 export type EventTime = {
-    type: "single",
+    type: TimeType.Single,
     /** Date/time */
     start: DateTime,
     /** Date/time */
     end: DateTime
 } | {
-    type: "recurring",
+    type: TimeType.Recurring,
     /** Time only */
     start: TimeOnly,
     /** Time only */
     end: TimeOnly,
     condition: EventCondition
 } | {
-    type: "allDay",
+    type: TimeType.AllDay,
     /** Date only */
     date: DateOnly
 } | {
-    type: "allDayRecurring",
+    type: TimeType.AllDayRecurring,
     condition: EventCondition
 };
 

@@ -8,15 +8,15 @@
 
     // Parse the current time value and convert to local timezone
     const currentLocalTime = $derived(() => {
-        if(value.includes('T')) {
-            // DateTime format - parse as UTC and convert to local
-            const utcDate = new Date(value);
-            return utcDate;
-        } else if(value.startsWith('T')) {
+        if(value.startsWith('T')) {
             // TimeOnly format - treat as UTC time today
             const timeStr = value.substring(1);
             const today = new Date();
-            const utcDate = new Date(`${today.toISOString().split('T')[0]}T${timeStr}Z`);
+            const utcDate = new Date(`${today.toISOString().split('T')[0]}T${timeStr}`);
+            return utcDate;
+        } else if(value.includes('T')) {
+            // DateTime format - parse as UTC and convert to local
+            const utcDate = new Date(value);
             return utcDate;
         } else {
             // Fallback
@@ -45,25 +45,27 @@
         // Create a local date with the selected time
         let localDate: Date;
         
-        if(value.includes('T')) {
-            // DateTime format - preserve the original date but update time in local timezone
-            const originalDate = new Date(value);
-            localDate = new Date(originalDate.getFullYear(), originalDate.getMonth(), originalDate.getDate(), 
-                               selectedHour, selectedMinute, selectedSecond);
-        } else {
+        if(value.startsWith('T')) {
             // TimeOnly format - use today's date with the selected time
             const today = new Date();
             localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 
                                selectedHour, selectedMinute, selectedSecond);
+        } else {
+            // DateTime format - preserve the original date but update time in local timezone
+            const originalDate = new Date(value);
+            localDate = new Date(originalDate.getFullYear(), originalDate.getMonth(), originalDate.getDate(), 
+                               selectedHour, selectedMinute, selectedSecond);
         }
         
-        if(value.includes('T')) {
+        if(value.startsWith('T')) {
+            // TimeOnly format - extract just the time portion and store with local timezone
+            const hours = localDate.getHours().toString().padStart(2, '0');
+            const minutes = localDate.getMinutes().toString().padStart(2, '0');
+            const seconds = localDate.getSeconds().toString().padStart(2, '0');
+            value = `T${hours}:${minutes}:${seconds}`;
+        } else {
             // DateTime format - convert to UTC and format
             value = localDate.toISOString();
-        } else {
-            // TimeOnly format - extract just the time portion in UTC
-            const utcTimeString = localDate.toISOString().split('T')[1];
-            value = `T${utcTimeString}`;
         }
         
         onchange();
