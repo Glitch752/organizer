@@ -1,5 +1,6 @@
 <script lang="ts">
     import { AttributeType, attributeTypes, type Attribute } from ".";
+  import DateTimeInput from "./DateTimeInput.svelte";
 
     const { data, onchange, onremove }: {
         data: Attribute,
@@ -28,6 +29,9 @@
     <label>
         Enabled <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
     </label>
+    <label>
+        Due <DateTimeInput bind:value={data.due} onchange={() => onchange(data)} />
+    </label>
     {:else}
     <span>Unknown attribute type {(data as any).type}</span>
     {/if}
@@ -44,7 +48,7 @@
     background-color: var(--surface-0);
 
     font-family: var(--font-body);
-    padding: 0.25rem 0.75rem;
+    padding: 0.25rem 0.75rem 0.5rem 0.75rem;
 }
 
 header {

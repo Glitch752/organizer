@@ -34,10 +34,10 @@ export const attributeTypes: {
     }
 };
 
-type DateTime = string; // ISO 8601 format with UTC - e.g. YYYY-MM-DDTHH:MM:SSZ
-type DateOnly = string; // YYYY-MM-DD format
-type DayOfYearOnly = string; // MM-DD format
-type TimeOnly = string; // THH:MM:SS format with UTC
+export type DateTime = string; // ISO 8601 format with UTC - e.g. YYYY-MM-DDTHH:MM:SSZ
+export type DateOnly = string; // YYYY-MM-DD format
+export type DayOfYearOnly = string; // MM-DD format
+export type TimeOnly = string; // THH:MM:SS format with UTC
 
 export type EventCondition = {
     type: "not",
