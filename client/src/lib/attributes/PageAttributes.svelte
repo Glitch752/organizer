@@ -41,7 +41,7 @@
 
 <div class="attributes">
     {#each attributes as attribute, i}
-        <AttributeDisplay data={attribute} onchange={(data) => {
+        <AttributeDisplay bind:data={attributes[i]} onchange={(data) => {
             if(!attributeArray) return;
             attributeArray.doc.transact(() => {
                 if(!attributeArray) return;

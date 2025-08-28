@@ -3,7 +3,7 @@
     import CalendarEventTimes from "./CalendarEventTimes.svelte";
     import DateTimeInput from "./DateTimeInput.svelte";
 
-    const { data, onchange, onremove }: {
+    const { data = $bindable(), onchange, onremove }: {
         data: Attribute,
         onchange: (data: Attribute) => void,
         onremove: () => void
@@ -18,16 +18,10 @@
 
     {#if data.type === AttributeType.CalendarEvent}
     <label>
-        Title <input type="text" bind:value={data.title} onchange={() => onchange(data)} />
-    </label>
-    <label>
         Enabled <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
     </label>
     <CalendarEventTimes bind:times={data.times} onchange={() => onchange(data)} />
     {:else if data.type === AttributeType.CalendarDeadline}
-    <label>
-        Title <input type="text" bind:value={data.title} onchange={() => onchange(data)} />
-    </label>
     <label>
         Enabled <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
     </label>

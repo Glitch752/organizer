@@ -1,23 +1,21 @@
 <script lang="ts">
-    import type { LocalTimeOnly, ZonedTimeOnly } from ".";
+    import type { DayOfYearOnly } from ".";
     import { fly } from "svelte/transition";
     import { easeInOutQuad } from "../util/time";
     import TimePicker from "./TimePicker.svelte";
-    import { parseFuzzyTime } from "./fuzzyDate";
     import TimeZonePicker from "./TimeZonePicker.svelte";
-    import { stripZoneId } from "./timeZones";
+    import { parseFuzzyDayOfYear } from "./fuzzyDate";
 
     let { value = $bindable(), onchange }: {
-        value: LocalTimeOnly | ZonedTimeOnly,
+        value: DayOfYearOnly,
         onchange: () => void
     } = $props();
 
-    function formatTime(value: LocalTimeOnly | ZonedTimeOnly) {
-        // Use the current day for this date
-        const date = new Date((new Date()).toISOString().split('T')[0] + stripZoneId(value));
+    function formatDay(value: DayOfYearOnly) {
+        const date = new Date((new Date()).getFullYear() + '-' + value);
         return date.toLocaleString(undefined, {
-            hour: "numeric",
-            minute: "2-digit"
+            month: "short",
+            day: "numeric"
         });
     }
 
@@ -30,14 +28,14 @@
         }
     }
 
-    let interpretInputDate = $state(formatTime(value));
+    let interpretInputDate = $state(formatDay(value));
 </script>
 
 <svelte:window onclick={windowClick} />
 
 <div>
     <button onclick={() => pickerOpen = !pickerOpen} class="time-input" title={value}>
-        {formatTime(value)}
+        {formatDay(value)}
     </button>
 
     {#if pickerOpen}
@@ -47,22 +45,21 @@
             transition:fly={{ duration: 150, easing: easeInOutQuad, y: -15 }}
             class="picker"
         >
-            <!-- TODO: Timezone picking idk -->
             <div class="interpret">
                 <input type="text" bind:value={interpretInputDate} />
                 <button onclick={() => {
-                    const date = parseFuzzyTime(interpretInputDate);
-                    if(date && date.isoTime) {
-                        value = date.isoTime;
+                    const date = parseFuzzyDayOfYear(interpretInputDate);
+                    if(date && date.dayOfYear) {
+                        value = date.dayOfYear;
                         onchange();
-                        interpretInputDate = formatTime(value);
+                        interpretInputDate = formatDay(value);
                     }
                 }}>Set</button>
             </div>
             <svelte:boundary>
-                {@const date = parseFuzzyTime(interpretInputDate)}
-                {#if date && date.isoTime}
-                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatTime(date.isoTime)}</span>
+                {@const date = parseFuzzyDayOfYear(interpretInputDate)}
+                {#if date && date.dayOfYear}
+                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatDay(date.dayOfYear)}</span>
                 {:else}
                     <span class="could-not-interpret">Could not interpret date</span>
                 {/if}

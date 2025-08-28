@@ -1,7 +1,9 @@
 // I admit: this one was partially vibe-coded (blegh).
 // I did NOT want to go through all that logic for a mediocre result anyway.
 
-import type { DateOnly, DateTime } from ".";
+// TODO: Refactor this to a more generic system that can reuse code across these fuzzy matchers
+
+import type { DateOnly, DateTime, DayOfYearOnly } from ".";
 
 export function parseFuzzyDate(input: string): {
     date: Date | null;
@@ -687,6 +689,177 @@ export function parseFuzzyDateTime(input: string): {
         date: finalDate,
         isoUTC: finalDate.toISOString(),
         explanation: `Parsed using heuristics (monthIndex=${monthIndex}, day=${day}, year=${year}, time=${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')})`
+    };
+}
+
+export function parseFuzzyDayOfYear(input: string): {
+    dayOfYear: DayOfYearOnly | null;
+    explanation: string;
+} {
+    if(!input || typeof input !== 'string') return { dayOfYear: null, explanation: 'empty or non-string input' };
+    
+    function dayOfYearString(month: number, day: number): DayOfYearOnly {
+        return String(month + 1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+    }
+
+    const months: Record<string, number> = {
+        jan: 0, january: 0,
+        feb: 1, february: 1,
+        mar: 2, march: 2,
+        apr: 3, april: 3,
+        may: 4,
+        jun: 5, june: 5,
+        jul: 6, july: 6,
+        aug: 7, august: 7,
+        sep: 8, sept: 8, september: 8,
+        oct: 9, october: 9,
+        nov: 10, november: 10,
+        dec: 11, december: 11
+    };
+    
+    // Normalize
+    let s: string = input.trim();
+    let original: string = s;
+    s = s.toLowerCase();
+    
+    // Reference date for current month/day
+    let now = new Date();
+    if(isNaN(now.getTime())) now = new Date();
+    
+    // Simple cleanup - remove time-related patterns and other noise
+    s = s.replace(/,/g, ' ')
+        .replace(/\b(st|nd|rd|th)\b/g, '')
+        .replace(/[@\_\(\)]/g, ' ')
+        .replace(/[\/\\]+/g, ' ')
+        .replace(/[-]+/g, ' ')
+        
+        .replace(/\b(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?\b/gi, '')
+        .replace(/\b(\d{3,4})(am|pm)\b/gi, '')
+        .replace(/\b(noon|midnight)\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    
+    // Keywords - for day of year, we interpret these as current year
+    const kwToday: boolean = /\btoday\b/.test(s);
+    if(kwToday) {
+        return {
+            dayOfYear: dayOfYearString(now.getMonth(), now.getDate()),
+            explanation: 'Today (current month and day)'
+        };
+    }
+    
+    // Months
+    let foundMonth: number | null = null;
+    for(const m of Object.keys(months)) {
+        const rx = new RegExp('\\b' + m + '\\b');
+        if(rx.test(s)) {
+            foundMonth = months[m];
+            s = s.replace(rx, '').replace(/\s+/g,' ').trim();
+            break;
+        }
+    }
+    
+    // Collect numeric tokens (days and potentially months)
+    const numbers: number[] = (s.match(/\d{1,2}/g) || []).map(n => parseInt(n,10));
+    
+    // If the original had numeric-date separators like 8/27 or 12-25
+    const sepMatch: RegExpMatchArray | null = original.match(/^\s*(\d{1,2})[\/\-](\d{1,2})\s*$/);
+    if(sepMatch && numbers.length >= 2) {
+        const a: number = parseInt(sepMatch[1],10);
+        const b: number = parseInt(sepMatch[2],10);
+        let mon: number | null = null, day: number | null = null;
+        
+        if(a > 12) { 
+            day = a; 
+            mon = b - 1; 
+        } else if(b > 12) { 
+            mon = a - 1; 
+            day = b; 
+        } else {
+            // Ambiguous case - use locale preference
+            const preferDMY: boolean = guessDMYPreferred();
+            if(preferDMY) { 
+                day = a; 
+                mon = b - 1; 
+            } else { 
+                mon = a - 1; 
+                day = b; 
+            }
+        }
+        
+        // Validate month and day
+        if(mon !== null && mon >= 0 && mon <= 11 && day !== null && day >= 1 && day <= 31) {
+            const daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            if(day <= daysInMonth[mon]) {
+                return {
+                    dayOfYear: dayOfYearString(mon, day),
+                    explanation: `Parsed numeric-separated day of year (${original})`
+                };
+            }
+        }
+    }
+    
+    let day: number | null = null, monthIndex: number | null = foundMonth;
+    
+    // Interpret numbers
+    if(foundMonth !== null) {
+        if(numbers.length === 0) {
+            day = 1;
+        } else if(numbers.length >= 1) {
+            day = numbers[0];
+        }
+    } else {
+        if(numbers.length === 1) {
+            // Single number - assume it's a day in current month
+            day = numbers[0];
+            monthIndex = now.getMonth();
+        } else if(numbers.length >= 2) {
+            const [a, b] = numbers;
+            // Two numbers without explicit month - treat as month/day or day/month
+            if(a > 12) {
+                day = a;
+                monthIndex = b - 1;
+            } else if(b > 12) {
+                monthIndex = a - 1;
+                day = b;
+            } else {
+                const preferDMY: boolean = guessDMYPreferred();
+                if(preferDMY) {
+                    day = a;
+                    monthIndex = b - 1;
+                } else {
+                    monthIndex = a - 1;
+                    day = b;
+                }
+            }
+        } else {
+            return {
+                dayOfYear: dayOfYearString(now.getMonth(), now.getDate()),
+                explanation: 'Fallback to today (current month and day)'
+            };
+        }
+    }
+    
+    if(monthIndex === null) monthIndex = now.getMonth();
+    if(day === null) day = 1;
+    
+    if(monthIndex < 0 || monthIndex > 11) {
+        return { dayOfYear: null, explanation: 'Invalid month value' };
+    }
+    
+    if(day < 1 || day > 31) {
+        return { dayOfYear: null, explanation: 'Invalid day value' };
+    }
+    
+    // We always allow leap days (Feb 29)
+    const daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    if(day > daysInMonth[monthIndex]) {
+        return { dayOfYear: null, explanation: `Day ${day} is invalid for month ${monthIndex + 1}` };
+    }
+    
+    return {
+        dayOfYear: dayOfYearString(monthIndex, day),
+        explanation: `Parsed using heuristics (month=${monthIndex + 1}, day=${day})`
     };
 }
 

@@ -38,43 +38,184 @@ export const attributeTypes: {
 export type DateTime = string; // ISO 8601 format with UTC - e.g. YYYY-MM-DDTHH:MM:SSZ
 export type DateOnly = string; // YYYY-MM-DD format
 export type DayOfYearOnly = string; // MM-DD format
-export type TimeOnly = string; // THH:MM:SS format with no timezone offset; we always use the local timezone for times
+export type LocalTimeOnly = string; // THH:MM:SS format with no timezone offset; always uses the local timezone for times
+export type ZonedTimeOnly = string; // THH:MM:SS+/-HH:MM format with timezone offset
+
+export enum EventConditionType {
+    Not = "not",
+    And = "and",
+    Or = "or",
+    Date = "date",
+    DateRange = "dateRange",
+    DayOfWeek = "dayOfWeek",
+    Month = "month",
+    Year = "year",
+    DayOfMonth = "dayOfMonth",
+    WeekOfMonth = "weekOfMonth",
+    DayOfYear = "dayOfYear",
+    WeekOfYear = "weekOfYear"
+}
+
+export function currentDayPlus(days: number = 0): DateOnly {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    return date.toISOString().split("T")[0];
+}
+
+function currentWeek(): number {
+    const date = new Date();
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date.valueOf() - firstDayOfYear.valueOf()) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+}
+
+export const conditionTypes: {
+    [type in EventConditionType]: {
+        name: string,
+        default: () => (EventCondition & {
+            type: type
+        })
+    }
+} = {
+    [EventConditionType.Not]: {
+        name: "Not",
+        default: () => ({
+            type: EventConditionType.Not,
+            condition: {
+                type: EventConditionType.Date,
+                date: currentDayPlus()
+            }
+        })
+    },
+    [EventConditionType.And]: {
+        name: "All of",
+        default: () => ({
+            type: EventConditionType.And,
+            conditions: [
+                {
+                    type: EventConditionType.Date,
+                    date: currentDayPlus()
+                }
+            ]
+        })
+    },
+    [EventConditionType.Or]: {
+        name: "Any of",
+        default: () => ({
+            type: EventConditionType.Or,
+            conditions: [
+                {
+                    type: EventConditionType.Date,
+                    date: currentDayPlus()
+                }
+            ]
+        })
+    },
+    [EventConditionType.Date]: {
+        name: "Date",
+        default: () => ({
+            type: EventConditionType.Date,
+            date: currentDayPlus()
+        })
+    },
+    [EventConditionType.DateRange]: {
+        name: "Date range",
+        default: () => ({
+            type: EventConditionType.DateRange,
+            start: currentDayPlus(),
+            end: currentDayPlus(30)
+        })
+    },
+    [EventConditionType.DayOfWeek]: {
+        name: "Day of Week",
+        default: () => ({
+            type: EventConditionType.DayOfWeek,
+            days: [new Date().getDay()] // Current day of the week
+        })
+    },
+    [EventConditionType.Month]: {
+        name: "Month",
+        default: () => ({
+            type: EventConditionType.Month,
+            months: [new Date().getMonth() + 1] // Current month (0-indexed in JS)
+        })
+    },
+    [EventConditionType.Year]: {
+        name: "Year",
+        default: () => ({
+            type: EventConditionType.Year,
+            years: [new Date().getFullYear()] // Current year
+        })
+    },
+    [EventConditionType.DayOfMonth]: {
+        name: "Day of Month",
+        default: () => ({
+            type: EventConditionType.DayOfMonth,
+            days: [new Date().getDate()] // Current day of the month
+        })
+    },
+    [EventConditionType.WeekOfMonth]: {
+        name: "Week of Month",
+        default: () => ({
+            type: EventConditionType.WeekOfMonth,
+            weeks: [Math.ceil(new Date().getDate() / 7)] // Current week of the month
+        })
+    },
+    [EventConditionType.DayOfYear]: {
+        name: "Day of Year",
+        default: () => ({
+            type: EventConditionType.DayOfYear,
+            days: [new Date().toISOString().split("T")[0].slice(5)] // Current day of the year in MM-DD format
+        })
+    },
+    [EventConditionType.WeekOfYear]: {
+        name: "Week of Year",
+        default: () => ({
+            type: EventConditionType.WeekOfYear,
+            weeks: [currentWeek()]
+        })
+    }
+};
 
 export type EventCondition = {
-    type: "not",
+    type: EventConditionType.Not,
     condition: EventCondition
 } | {
-    type: "and" | "or",
+    type: EventConditionType.And | EventConditionType.Or,
     conditions: EventCondition[]
 } | {
-    type: "date",
+    type: EventConditionType.Date,
     date: DateOnly
 } | {
-    type: "dayOfWeek",
+    type: EventConditionType.DateRange,
+    start: DateOnly,
+    end: DateOnly
+} | {
+    type: EventConditionType.DayOfWeek,
     /** 0 = Sunday, 1 = Monday, ..., 6 = Saturday */
     days: number[]
 } | {
-    type: "month",
+    type: EventConditionType.Month,
     /** 1 = January, 2 = February, ..., 12 = December */
     months: number[]
 } | {
-    type: "year",
+    type: EventConditionType.Year,
     /** e.g. 2024, 2025, etc. */
     years: number[]
 } | {
-    type: "dayOfMonth",
+    type: EventConditionType.DayOfMonth,
     /** 1 to 31 */
     days: number[]
 } | {
-    type: "weekOfMonth",
+    type: EventConditionType.WeekOfMonth,
     /** 1 to 5 */
     weeks: number[]
 } | {
-    type: "dayOfYear",
+    type: EventConditionType.DayOfYear,
     /** MM-DD format */
     days: DayOfYearOnly[]
 } | {
-    type: "weekOfYear",
+    type: EventConditionType.WeekOfYear,
     /** 1 to 53 */
     weeks: number[]
 };
@@ -112,7 +253,7 @@ export const timeTypes: {
             start: "T09:00:00",
             end: "T10:00:00",
             condition: {
-                type: "dayOfWeek",
+                type: EventConditionType.DayOfWeek,
                 days: [1, 3, 5] // Monday, Wednesday, Friday
             }
         })
@@ -131,7 +272,7 @@ export const timeTypes: {
         default: () => ({
             type: TimeType.AllDayRecurring,
             condition: {
-                type: "month",
+                type: EventConditionType.Month,
                 months: [1] // January
             }
         })
@@ -146,10 +287,10 @@ export type EventTime = {
     end: DateTime
 } | {
     type: TimeType.Recurring,
-    /** Time only */
-    start: TimeOnly,
-    /** Time only */
-    end: TimeOnly,
+    /** Local or zoned time only */
+    start: LocalTimeOnly | ZonedTimeOnly,
+    /** Local or zoned time only */
+    end: LocalTimeOnly | ZonedTimeOnly,
     condition: EventCondition
 } | {
     type: TimeType.AllDay,
@@ -162,12 +303,10 @@ export type EventTime = {
 
 export type Attribute = {
     type: AttributeType.CalendarEvent,
-    title: string,
     enabled: boolean,
     times: EventTime[]
 } | {
     type: AttributeType.CalendarDeadline,
-    title: string,
     enabled: boolean,
     /** Date/time */
     due: DateTime

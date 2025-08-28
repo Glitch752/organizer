@@ -2,7 +2,8 @@
     import { TimeType, timeTypes, type EventTime } from ".";
     import DateInput from "./DateInput.svelte";
     import DateTimeInput from "./DateTimeInput.svelte";
-  import TimeInput from "./TimeInput.svelte";
+  import RecurranceCondition from "./RecurranceCondition.svelte";
+    import TimeInput from "./TimeInput.svelte";
 
     let { time = $bindable(), onchange, onremove }: {
         time: EventTime,
@@ -18,19 +19,25 @@
     </header>
 
     {#if time.type === TimeType.Single}
-        <DateTimeInput bind:value={time.start} {onchange} />
-        to
-        <DateTimeInput bind:value={time.end} {onchange} />
+        <span>
+            <DateTimeInput bind:value={time.start} {onchange} />
+            to
+            <DateTimeInput bind:value={time.end} {onchange} />
+        </span>
     {:else if time.type === TimeType.Recurring}
-        <TimeInput bind:value={time.start} {onchange} />
-        to
-        <TimeInput bind:value={time.end} {onchange} />
+        <span>
+            <TimeInput bind:value={time.start} {onchange} />
+            to
+            <TimeInput bind:value={time.end} {onchange} />
+        </span>
         
-        {time.condition.type}
+        Recurrance condition
+        <RecurranceCondition bind:condition={time.condition} {onchange} />
     {:else if time.type === TimeType.AllDay}
         <DateInput bind:value={time.date} {onchange} />
     {:else if time.type === TimeType.AllDayRecurring}
-        {time.condition.type}
+        Recurrance condition
+        <RecurranceCondition bind:condition={time.condition} {onchange} />
     {/if}
 </div>
 
@@ -41,11 +48,10 @@
     gap: 0.25rem;
 
     border-radius: 5px;
-    margin-left: 1rem;
     border: 2px solid var(--surface-1-border);
 
     font-family: var(--font-body);
-    padding: 0 0.5rem;
+    padding: 0 0.5rem 0.5rem 0.5rem;
 }
 
 header {

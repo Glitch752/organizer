@@ -69,8 +69,10 @@
 </script>
 
 <nav>
-    <button class="blue" class:active={$route == "/calendar"} onclick={() => route.navigate("/calendar")}>Calendar</button>
-    <div class="separator"></div>
+    <div class="header">
+        <button class="blue" class:active={$route == "/calendar"} onclick={() => route.navigate("/calendar")}>Calendar</button>
+        <div class="separator"></div>
+    </div>
     <div class="controls">
     </div>
     <ul>
@@ -105,9 +107,16 @@
 
         display: flex;
         flex-direction: column;
-        overflow-y: auto;
 
         margin: 0;
+        gap: 0.5rem;
+    }
+
+    .header {
+        padding: 0.5rem;
+
+        display: flex;
+        flex-direction: column;
         gap: 0.5rem;
 
         > button {
@@ -122,6 +131,7 @@
         list-style: none;
         margin: 0;
         padding: 0.5rem;
+        overflow-y: auto;
     }
     
     .separator {

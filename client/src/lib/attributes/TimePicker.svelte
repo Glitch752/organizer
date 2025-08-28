@@ -1,16 +1,17 @@
 <script lang="ts">
-    import type { DateTime, TimeOnly } from ".";
+    import type { DateTime, LocalTimeOnly } from ".";
+    import { stripZoneId } from "./timeZones";
 
     let { value = $bindable(), onchange }: {
-        value: DateTime | TimeOnly,
+        value: DateTime | LocalTimeOnly,
         onchange: () => void
     } = $props();
 
     // Parse the current time value and convert to local timezone
     const currentLocalTime = $derived(() => {
         if(value.startsWith('T')) {
-            // TimeOnly format - treat as UTC time today
-            const timeStr = value.substring(1);
+            // TimeOnly format; this will work with either a local or zoned time
+            const timeStr = stripZoneId(value).substring(1);
             const today = new Date();
             const utcDate = new Date(`${today.toISOString().split('T')[0]}T${timeStr}`);
             return utcDate;
@@ -58,11 +59,12 @@
         }
         
         if(value.startsWith('T')) {
-            // TimeOnly format - extract just the time portion and store with local timezone
+            // Only replace the time, not other data like the time zone offset or identifier
             const hours = localDate.getHours().toString().padStart(2, '0');
             const minutes = localDate.getMinutes().toString().padStart(2, '0');
             const seconds = localDate.getSeconds().toString().padStart(2, '0');
-            value = `T${hours}:${minutes}:${seconds}`;
+            const timeRegex = /T\d{2}:\d{2}:\d{2}(\.\d+)?/;
+            value = value.replace(timeRegex, `T${hours}:${minutes}:${seconds}`);
         } else {
             // DateTime format - convert to UTC and format
             value = localDate.toISOString();

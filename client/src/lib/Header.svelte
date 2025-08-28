@@ -34,7 +34,7 @@
 
 		margin: 0 auto;
 		padding: 0 1rem;
-		width: var(--max-content-width);
+		max-width: var(--max-content-width);
 	}
 
 	.title {

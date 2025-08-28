@@ -80,6 +80,7 @@
 <style>
 div {
     position: relative;
+    display: inline;
 }
 dialog {
     border-radius: 5px;
