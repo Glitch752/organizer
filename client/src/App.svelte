@@ -4,8 +4,6 @@
   	import { persistentState } from "./stores/persistent";
   	import { route } from "./stores/router";
 
-	let component = route.component;
-
 	let navOpen = persistentState<boolean>("navOpen", true);
 
 	function keydown(event: KeyboardEvent) {
@@ -25,7 +23,7 @@
 
 	<main>
 		<!-- svelte-ignore svelte_component_deprecated - <Component/> isn't reactive with a writable for some reason? -->
-		<svelte:component this={$component} />
+		<svelte:component this={$route.component} />
 	</main>
 </div>
 

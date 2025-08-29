@@ -1,8 +1,16 @@
 <script lang="ts">
+    import { persistentState } from "../stores/persistent";
   	import { route } from "../stores/router";
     import { client } from "./client";
     import NavRouteButton from "./NavRouteButton.svelte";
     import { writable } from "svelte/store";
+
+    let latestPage = persistentState<string | null>("latestPage", null);
+    $effect(() => {
+        if($route.onRoute("page")) {
+            latestPage.set($route.matches?.[1] ?? null);
+        }
+    })
 
     const treeview = client.immutablePageTreeView;
     
@@ -70,8 +78,9 @@
 
 <nav>
     <div class="header">
-        <button class="blue" class:active={$route == "/calendar"} onclick={() => route.navigate("/calendar")}>Calendar</button>
-        <div class="separator"></div>
+        <button class="blue" class:active={$route.onRoute("home")} onclick={() => route.navigate("/home")}>Home</button>
+        <button class="blue" class:active={$route.onRoute("page")} onclick={() => route.navigate($latestPage ? `/page/${$latestPage}` : "/home")}>Notes</button>
+        <button class="blue" class:active={$route.onRoute("calendar")} onclick={() => route.navigate("/calendar")}>Calendar</button>
     </div>
     <div class="controls">
     </div>
@@ -118,7 +127,7 @@
         padding: 0.5rem;
 
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         gap: 0.5rem;
 
         > button {
@@ -134,11 +143,6 @@
         margin: 0;
         padding: 0.5rem;
         overflow-y: auto;
-    }
-    
-    .separator {
-        border-bottom: 2px solid var(--surface-1-border);
-        display: block;
     }
 
     .root-drop-zone {

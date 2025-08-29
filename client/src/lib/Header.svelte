@@ -7,8 +7,7 @@
 	} = $props();
 
 	const title = client.title;
-	const [onPage] = $derived([route.onRoute("page"), $route]);
-
+	
 	function capitalize(str: string) {
 		return str.charAt(0).toUpperCase() + str.slice(1);
 	}
@@ -21,8 +20,8 @@
 <!-- This is a gross mess of nested flexboxes, but it works -->
 <header>
 	<div class="left"></div>
-	<div class="content-aligned" class:onPage>
-		{#if onPage}
+	<div class="content-aligned" class:onPage={$route.onRoute("page")}>
+		{#if $route.onRoute("page")}
 			<input
 				type="text"
 				class="title"
@@ -31,7 +30,7 @@
 				maxlength="100"
 			/>
 		{:else}
-			<h2>{capitalize(route.currentRoute ?? "")}</h2>
+			<h2>{capitalize($route.routeName ?? "")}</h2>
 		{/if}
 
 		<div class="actions">

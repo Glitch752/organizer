@@ -4,7 +4,7 @@
     import Editor from "./Editor.svelte";
 
     // lmao
-    let [id] = $derived([route.matches?.at(1), $route]);
+    let id = $derived($route.matches?.at(1));
 </script>
 
 {#if id}

@@ -18,8 +18,6 @@
         handleDrop: (targetPageId: string | null, position: 'child' | 'root') => void;
     } = $props();
 
-    const active = $derived([route.onRoute("page", [page.id]), $route]);
-
     function handleDragStart(event: DragEvent) {
         if(!event.dataTransfer) return;
         
@@ -89,7 +87,7 @@
         ondragleave={handleDragLeave}
         class="blue monospace"
         class:dragging-over={$dragState.dragOverPageId === page.id && $dragState.dragOverPosition === 'child'}
-        class:active={active[0]}
+        class:active={$route.onRoute("page", [page.id])}
         title={page.id}
         onclick={() => route.navigate(`/page/${page.id}`)}
     >

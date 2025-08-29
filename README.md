@@ -35,7 +35,6 @@ If others begin using this application and are interested in implementing these 
 - [ ] Better page links
   - [ ] Backlinks
 - [ ] Better server WS connection
-- [ ] Nav folding
 - [ ] Plugin system
 - [ ] Multi-workspace functionality
 - [ ] Import/export
