@@ -2,12 +2,22 @@ import Home from "../pages/Home.svelte";
 import Calendar from "../pages/Calendar.svelte";
 import Page from "../pages/Page.svelte";
 
+import PageHeader from "../pages/PageHeader.svelte";
+import PageNav from "../pages/PageNav.svelte";
+
 import type { Component } from 'svelte';
-import { writable, type Subscriber, type Unsubscriber, type Writable } from 'svelte/store';
+import { writable, type Subscriber, type Unsubscriber } from 'svelte/store';
+import CalendarNav from "../pages/CalendarNav.svelte";
+
+type ComponentSet = {
+    page: Component;
+    nav: Component;
+    header?: Component;
+}
 
 type RouterPathConstants = readonly {
     matcher: RegExp;
-    component: Component;
+    components: ComponentSet;
     name: string;
 }[];
 
@@ -24,7 +34,7 @@ class RouteData<Paths extends RouterPathConstants> {
         public routeName: RouteNamesFrom<Paths>,
         public pathname: string,
         public matches: RegExpMatchArray | null,
-        public component: Component
+        public components: ComponentSet
     ) {}
 
     /**
@@ -49,7 +59,19 @@ class Router<Paths extends RouterPathConstants> {
     public subscribe: (run: Subscriber<RouteData<Paths>>, invalidate?: () => void) => Unsubscriber;
     private set: (value: RouteData<Paths>) => void;
 
+    private readonly defaultPageName: RouteNamesFrom<Paths>;
+    private get defaultPage() {
+        return this.paths.find(p => p.name === this.defaultPageName)!;
+    }
+    
     constructor(private paths: Paths) {
+        // Find the path responsible for "/"
+        const defaultPath = this.paths.find(p => p.matcher.test("/"));
+        if(!defaultPath) {
+            throw new Error("No default path (/) defined in router paths");
+        }
+        this.defaultPageName = defaultPath.name;
+
         const { subscribe, set } = writable(this.getPathData(window.location.pathname));
         this.subscribe = subscribe;
         this.set = set;
@@ -66,15 +88,15 @@ class Router<Paths extends RouterPathConstants> {
                 matchedPath.name,
                 path,
                 path.match(matchedPath.matcher),
-                matchedPath.component,
+                matchedPath.components,
             );
         } else {
             this.navigate("/");
             return new RouteData(
-                this.paths.find(p => p.component === Home)!.name,
+                this.defaultPageName,
                 path,
                 null,
-                Home,
+                this.defaultPage.components
             );
         }
     }
@@ -88,17 +110,17 @@ class Router<Paths extends RouterPathConstants> {
 export const route = new Router([
     {
         matcher: /^\/$/,
-        component: Home,
+        components: { page: Home, nav: PageNav },
         name: "home"
     },
     {
         matcher: /^\/calendar$/,
-        component: Calendar,
+        components: { page: Calendar, nav: CalendarNav },
         name: "calendar"
     },
     {
         matcher: /^\/page\/([a-zA-Z0-9-]+)$/,
-        component: Page,
+        components: { page: Page, header: PageHeader, nav: PageNav },
         name: "page"
     }
 ] as const);

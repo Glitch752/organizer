@@ -3,21 +3,19 @@
 
     let { value = $bindable(), onchange }: {
         value: ZonedDateTimeString | PlainDateString,
-        onchange: () => void
+        onchange?: () => void
     } = $props();
 
     // Parse the current date value and convert to local timezone
-    const currentLocalDate = $derived(() => getPlainDate(value));
+    const plainDate = $derived(() => getPlainDate(value));
 
-    const currentYear = $derived(() => currentLocalDate().year);
+    const currentYear = $derived(() => plainDate().year);
     /** NOTE: This is a 0-indexed month, unlike what Temporal uses. */
-    const currentMonth = $derived(() => currentLocalDate().month - 1);
-    const currentDay = $derived(() => currentLocalDate().day);
+    const currentMonth = $derived(() => plainDate().month - 1);
+    const currentDay = $derived(() => plainDate().day);
 
-    // svelte-ignore state_referenced_locally Intentional
-    let viewYear = $state(currentYear());
-    // svelte-ignore state_referenced_locally Intentional
-    let viewMonth = $state(currentMonth());
+    let viewYear = $derived(currentYear());
+    let viewMonth = $derived(currentMonth());
 
     const monthNames = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -38,6 +36,8 @@
             day: number
         }[] = [];
         
+        // TODO: If clicking these out-of-month days, change to that month and select that day
+
         // Days before the first of the month (from the previous month)
         for(let i = firstDayOfMonth - 1; i >= 0; i--) {
             days.push({ inMonth: false, day: daysInPreviousMonth - i });
@@ -56,7 +56,7 @@
 
     function selectDate(day: number) {
         value = updateDateString(value, viewYear, viewMonth + 1, day);
-        onchange();
+        onchange?.();
     }
 
     function previousMonth() {
@@ -87,11 +87,8 @@
 
 <div class="date-picker">
     <div class="header">
+        <span class="month-year">{monthNames[viewMonth]} {viewYear}</span>
         <button onclick={previousMonth} class="nav-button" title="Previous month">‹</button>
-        <div class="month-year">
-            <span class="month">{monthNames[viewMonth]}</span>
-            <span class="year">{viewYear}</span>
-        </div>
         <button onclick={nextMonth} class="nav-button" title="Next month">›</button>
     </div>
     
@@ -129,7 +126,7 @@
 
 <style lang="scss">
     .date-picker {
-        min-width: 280px;
+        min-width: 17.5em;
         width: fit-content;
         display: flex;
         flex-direction: column;
@@ -138,14 +135,14 @@
     .header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.5rem;
-        padding: 0 0.5rem;
+        margin-bottom: 0.5em;
+        padding: 0 0.5em;
+        gap: 0.5em;
     }
     .nav-button {
-        font-size: 1.25rem;
-        width: 2rem;
-        height: 2rem;
+        font-size: 1.25em;
+        width: 1.5em;
+        height: 1.5em;
         border-radius: 3px;
     }
 
@@ -155,20 +152,10 @@
     }
 
     .month-year {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .month {
         font-weight: 600;
-        font-size: 1.1rem;
+        font-size: 1.1em;
         color: var(--color-important-text);
-    }
-
-    .year {
-        font-size: 0.875rem;
-        color: var(--subtle-text);
+        flex: 1;
     }
 
     .day-headers {
@@ -178,7 +165,7 @@
     }
     .day-header {
         text-align: center;
-        font-size: 0.75rem;
+        font-size: 0.75em;
         color: var(--subtle-text);
         font-weight: 600;
     }
@@ -193,14 +180,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.875rem;
+        font-size: 0.875em;
         cursor: pointer;
         border: 1px solid transparent;
         background: none;
         color: var(--color-text);
         border-radius: 3px;
         transition: all 150ms;
-        min-height: 2rem;
+        min-height: 2.5em;
     
         &.other-month {
             color: var(--subtle-text);
@@ -236,8 +223,8 @@
     //     justify-content: center;
 
     //     .today-button {
-    //         padding: 0.375rem 0.75rem;
-    //         font-size: 0.875rem;
+    //         padding: 0.5em 0.75em;
+    //         font-size: 0.875em;
     //     }
     // }
 </style>

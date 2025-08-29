@@ -1,12 +1,9 @@
 <script lang="ts">
   	import { route } from "../stores/router";
-  	import { client } from "./client";
 
 	let { navOpen = $bindable() }: {
 		navOpen: boolean
 	} = $props();
-
-	const title = client.title;
 	
 	function capitalize(str: string) {
 		return str.charAt(0).toUpperCase() + str.slice(1);
@@ -21,14 +18,9 @@
 <header>
 	<div class="left"></div>
 	<div class="content-aligned" class:onPage={$route.onRoute("page")}>
-		{#if $route.onRoute("page")}
-			<input
-				type="text"
-				class="title"
-				bind:value={$title}
-				aria-label="Title"
-				maxlength="100"
-			/>
+		{#if $route.components.header}
+			<!-- svelte-ignore svelte_component_deprecated - <Component/> isn't reactive with a writable for some reason? -->
+			<svelte:component this={$route.components.header} />
 		{:else}
 			<h2>{capitalize($route.routeName ?? "")}</h2>
 		{/if}
@@ -124,22 +116,6 @@
 	.actions {
 		display: flex;
 		gap: 0.5rem;
-	}
-
-	.title {
-		margin: 0;
-		font-size: 1.5rem;
-		padding: 0;
-		font-weight: normal;
-
-		text-overflow: ellipsis;
-
-		border: none;
-		outline: none;
-		background-color: transparent;
-		color: var(--color-text);
-
-		flex: 1;
 	}
 
 	.nav-toggle {

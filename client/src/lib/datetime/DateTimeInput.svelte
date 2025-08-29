@@ -98,6 +98,7 @@ hr {
     display: flex;
     flex-direction: row;
     gap: 0.75rem;
+    font-size: 1rem;
 
     hr {
         border: none;

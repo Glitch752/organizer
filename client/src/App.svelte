@@ -23,7 +23,7 @@
 
 	<main>
 		<!-- svelte-ignore svelte_component_deprecated - <Component/> isn't reactive with a writable for some reason? -->
-		<svelte:component this={$route.component} />
+		<svelte:component this={$route.components.page} />
 	</main>
 </div>
 

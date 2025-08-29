@@ -42,7 +42,9 @@
         {/if}
     </svelte:boundary>
     <hr />
-    <DatePicker bind:value onchange={() => { onchange(); }} />
+    <div class="content">
+        <DatePicker bind:value onchange={() => { onchange(); }} />
+    </div>
 </PopupButton>
 
 <style>
@@ -74,5 +76,9 @@ hr {
     color: var(--color-error-text);
     font-size: 0.875rem;
     margin-top: 0.25rem;
+}
+
+.content {
+    font-size: 1rem;
 }
 </style>
