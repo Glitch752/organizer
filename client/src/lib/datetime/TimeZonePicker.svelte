@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { getPlainTime, getTimeZones, isZonedDateTime, isZonedTime, makePlainTime, makeZonedDateTime, makeZonedTime, parseZonedDateTime, parseZonedTime, type PlainTimeString, type TimeZoneData, type ZonedDateTimeString, type ZonedTimeString } from "./time";
+    import { onMount } from "svelte";
+    import { getPlainTime, getTimeZones, isPlainTime, isZonedDateTime, isZonedTime, makePlainTime, makeZonedDateTime, makeZonedTime, parseZonedDateTime, parseZonedTime, type PlainTimeString, type TimeZoneData, type ZonedDateTimeString, type ZonedTimeString } from "./time";
 
     let { value = $bindable(), onchange }: {
         value: ZonedDateTimeString | ZonedTimeString | PlainTimeString,
@@ -8,23 +9,19 @@
 
     // Common time zones with their offsets
     const timeZones: TimeZoneData[] = [
-        { id: "Local", offset: null, description: "Your local time zone" },
+        ...(isZonedDateTime(value) ? [] : [{ id: "Local", offset: null, description: "Always use local time" }]),
         ...getTimeZones()
     ];
 
     // Determine current selection
     const currentSelection = $derived(() => {
-        if(!isZonedTime(value)) {
+        if(isPlainTime(value)) {
             return timeZones[0]; // "Local"
         }
 
-        const { zone } = parseZonedTime(value);
-        const idMatch = timeZones.find(tz => tz.id === zone) ? value.match(/\[(.+?)\]$/) : null;
-        if(idMatch) {
-            const id = idMatch[1];
-            const matchingZone = timeZones.find(tz => tz.id === id);
-            if(matchingZone) return matchingZone;
-        }
+        const zone = isZonedTime(value) ? parseZonedTime(value).zone : parseZonedDateTime(value).timeZoneId;
+        const idMatch = timeZones.find(tz => tz.id === zone);
+        if(idMatch) return idMatch;
         
         // Extract offset from the value
         const offsetMatch = value.match(/([+-]\d{2}:\d{2})$/);
@@ -53,40 +50,74 @@
         
         onchange();
     }
+
+    let search = $state("");
+
+    // Scroll to the selected timezone on mount
+    let timezoneListEl: HTMLDivElement;
+    onMount(() => {
+        const selectedEl = timezoneListEl.querySelector(".timezone-option.selected") as HTMLButtonElement;
+        if(selectedEl) {
+            const listRect = timezoneListEl.getBoundingClientRect();
+            const selectedRect = selectedEl.getBoundingClientRect();
+            if(selectedRect.top < listRect.top || selectedRect.bottom > listRect.bottom) {
+                timezoneListEl.scrollTop =
+                    selectedEl.offsetTop - timezoneListEl.offsetTop -
+                    100 + (selectedEl.clientHeight / 2);
+            }
+        }
+    });
+
+    let collapsed = $state(true);
 </script>
 
 <div class="timezone-picker">
-    <div class="current-selection">
+    <button class="current-selection" onclick={() => collapsed = !collapsed}>
         <span class="selected-zone">{currentSelection().id}</span>
         <span class="selected-description">{currentSelection().description}</span>
         {#if currentSelection().offset}
             <span class="selected-offset">UTC{currentSelection().offset}</span>
         {/if}
-    </div>
-    
-    <div class="timezone-list">
-        {#each timeZones as timeZone}
-            <button 
-                class="timezone-option"
-                class:selected={currentSelection().id === timeZone.id && currentSelection().offset === timeZone.offset}
-                onclick={() => selectTimeZone(timeZone)}
-            >
-                <div class="timezone-main">
-                    <span class="timezone-label">{timeZone.id}</span>
-                    {#if timeZone.offset}
-                        <span class="timezone-offset">UTC{timeZone.offset}</span>
-                    {/if}
-                </div>
-                <div class="timezone-description">{timeZone.description}</div>
-            </button>
-        {/each}
+        <span class="collapse">{#if collapsed}▲{:else}▼{/if}</span>
+    </button>
+
+    <div
+        class="options"
+        class:collapsed
+    >
+        <input
+            type="text"
+            placeholder="Search time zones..."
+            bind:value={search}
+        />
+        
+        <div class="timezone-list" bind:this={timezoneListEl}>
+            {#each timeZones.filter(tz =>
+                tz.id.toLowerCase().includes(search.toLowerCase()) ||
+                tz.description.toLowerCase().includes(search.toLowerCase())
+            ) as timeZone}
+                {@const selected = currentSelection().id === timeZone.id && currentSelection().offset === timeZone.offset}
+                <button 
+                    class="timezone-option"
+                    class:selected
+                    onclick={() => selectTimeZone(timeZone)}
+                >
+                    <div class="timezone-main">
+                        <span class="timezone-label">{timeZone.id}</span>
+                        {#if timeZone.offset}
+                            <span class="timezone-offset">UTC{timeZone.offset}</span>
+                        {/if}
+                    </div>
+                    <div class="timezone-description">{timeZone.description}</div>
+                </button>
+            {/each}
+        </div>
     </div>
 </div>
 
 <style lang="scss">
     .timezone-picker {
-        min-width: 300px;
-        max-width: 400px;
+        width: 300px;
         background-color: var(--surface-0);
         border-radius: 5px;
         border: 2px solid var(--surface-1-border);
@@ -97,33 +128,76 @@
     }
 
     .current-selection {
-        padding: 0.75rem;
+        padding: 0.5rem 0.75rem;
         background-color: var(--surface-1);
         border-bottom: 1px solid var(--surface-1-border);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto auto;
+        text-align: left;
+        border: none;
+        border-radius: 0;
+
+        .selected-zone {
+            font-weight: 600;
+            color: var(--color-important-text);
+            font-size: 1.1rem;
+            grid-column: 1 / 2;
+            grid-row: 1 / 2;
+        }
+    
+        .selected-description {
+            color: var(--subtle-text);
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+            grid-column: 1 / 2;
+            grid-row: 2 / 3;
+        }
+    
+        .selected-offset {
+            color: var(--blue-text);
+            font-size: 0.875rem;
+            font-family: var(--font-mono);
+            white-space: nowrap;
+            grid-column: 1 / 2;
+            grid-row: 3 / 4;
+        }
+
+        .collapse {
+            background: transparent;
+            border: none;
+            color: var(--subtle-text);
+            font-size: 1rem;
+            cursor: pointer;
+            grid-column: 2 / 3;
+            grid-row: 1 / 4;
+            align-self: center;
+        }
+    }
+
+    .options {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
+        max-height: 300px;
+        overflow: hidden;
+        transition: max-height 250ms cubic-bezier(0.4, 0.0, 0.2, 1);
+
+        &.collapsed {
+            max-height: 0;
+            padding: 0;
+            pointer-events: none;
+        }
     }
 
-    .selected-zone {
-        font-weight: 600;
-        color: var(--color-important-text);
-        font-size: 1.1rem;
-    }
-
-    .selected-description {
-        color: var(--subtle-text);
-        font-size: 0.875rem;
-    }
-
-    .selected-offset {
-        color: var(--blue-text);
-        font-size: 0.875rem;
-        font-family: var(--font-mono);
+    input {
+        border-radius: 0;
+        background-color: var(--surface-0);
+        border-color: transparent;
+        border-bottom-color: var(--surface-1-border);
+        border-width: 1px;
     }
 
     .timezone-list {
-        max-height: 300px;
         overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: var(--surface-1) var(--surface-0);
@@ -202,6 +276,7 @@
         color: var(--blue-text);
         font-size: 0.875rem;
         font-family: var(--font-mono);
+        white-space: nowrap;
     }
 
     .timezone-description {

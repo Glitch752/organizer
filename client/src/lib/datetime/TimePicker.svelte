@@ -179,12 +179,11 @@
     .time-picker {
         background-color: var(--surface-0);
         border-radius: 5px;
-        padding: 0.75rem;
         min-width: 280px;
 
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.5rem;
     }
 
     .time-12h {
@@ -221,7 +220,7 @@
         background-color: var(--surface-1);
         border: 2px solid var(--surface-1-border);
         border-radius: 5px;
-        padding: 0.25rem 1rem;
+        padding: 0 0.5rem;
         font-family: var(--font-mono);
         font-size: 1.5rem;
         font-weight: 600;

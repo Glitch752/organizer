@@ -33,9 +33,11 @@
         <span>Unknown attribute type {(data as any).type}</span>
         {/if}
         
-        {#snippet failed(error)}
-            <p>Failed to render attribute data. Try removing and re-adding it.</p>
-        {/snippet}
+        <!-- {#snippet failed(error)}
+            <p {@attach () => {
+                console.error(error);
+            }}>Failed to render attribute data. Try removing and re-adding it.</p>
+        {/snippet} -->
     </svelte:boundary>
 </div>
 

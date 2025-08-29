@@ -48,6 +48,7 @@ export type PlainTimeString = string & { readonly __brand: unique symbol };
  * A [RFC 9557](https://datatracker.ietf.org/doc/html/rfc9557)-like time and zone with a prefix.  
  * This is used for times of recurring events that have a specific time zone.
  * There is no Temporal object that directly corresponds to this format, as the zone is only used when resolving an instant.  
+ * The stored offset, if present, will be relative to the timezone when the time was created, but it's not meaningful as a standalone value.
  * 
  * `ZonedTime|HH:mm:ss.sssssssss Z/±HH:mm [time_zone_id]` (spaces only for readability)
  * e.g. `ZonedTime|13:00:00-05:00[America/New_York]`
@@ -100,8 +101,11 @@ export function parseZonedDateTime(str: ZonedDateTimeString): Temporal.ZonedDate
 }
 
 export function makeZonedTime(time: Temporal.PlainTime, timeZone: string): ZonedTimeString {
-    const zdt = Temporal.ZonedDateTime.from({ timeZone }).withPlainTime(time);
-    return `ZonedTime|${zdt.toString().replace(/^.+?T/, '').replace(/\[.+\]$/, '')}[${timeZone}]` as ZonedTimeString;
+    const zdt = Temporal.Now.zonedDateTimeISO(timeZone).withPlainTime(time);
+    return `ZonedTime|${zdt.toString({
+        offset: "never",
+
+    }).replace(/^.+?T/, '').replace(/\[.+\]$/, '')}[${timeZone}]` as ZonedTimeString;
 }
 
 export function parseZonedTime(str: ZonedTimeString): { time: Temporal.PlainTime, zone: string } {
@@ -141,10 +145,10 @@ export function makePlainMonthDay(pmd: Temporal.PlainMonthDay): PlainMonthDayStr
 export function getPlainTime(str: ZonedDateTimeString | ZonedTimeString | PlainTimeString): Temporal.PlainTime {
     if(isZonedTime(str)) {
         return parseZonedTime(str).time;
-    } else if(isPlainTime(str)) {
-        return parsePlainTime(str);
-    } else {
+    } else if(isZonedDateTime(str)) {
         return parseZonedDateTime(str).toPlainTime();
+    } else {
+        return parsePlainTime(str);
     }
 }
 
@@ -287,7 +291,11 @@ export type TimeZoneData = {
 export function getTimeZones(): TimeZoneData[] {    
     return Intl.supportedValuesOf('timeZone').map(tz => {
         const now = new Date();
-        const zoneName = now.toLocaleString('en-US', { timeZone: tz, timeZoneName: 'short' }).split(' ').pop();
+        const zoneName = now.toLocaleTimeString('en-US', {
+            hour12: false,
+            timeZone: tz,
+            timeZoneName: 'longGeneric'
+        }).replace(/^[^ ]+ /, ''); // Remove time part
         const offset = now.toLocaleString('en-US', {
             timeZone: tz,
             timeZoneName: 'longOffset'
@@ -297,7 +305,7 @@ export function getTimeZones(): TimeZoneData[] {
             id: tz,
             offset,
             offsetNumber: offset ? parseFloat(offset.replace(/[^\d.-]/g, '')) : 0,
-            description: `(${zoneName}) ${tz.replace(/_/g, ' ')}`
+            description: zoneName
         };
     }).sort((a, b) => {
         // Sort by offset

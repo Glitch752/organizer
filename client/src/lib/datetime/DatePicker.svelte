@@ -131,7 +131,6 @@
     .date-picker {
         min-width: 280px;
         width: fit-content;
-        padding: 0.5rem;
         display: flex;
         flex-direction: column;
     }
@@ -140,7 +139,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
+        padding: 0 0.5rem;
     }
     .nav-button {
         font-size: 1.25rem;
@@ -158,7 +158,6 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 0.125rem;
     }
 
     .month {

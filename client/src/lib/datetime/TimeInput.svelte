@@ -1,10 +1,10 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
-    import { easeInOutQuad } from "../util/time";
     import TimePicker from "./TimePicker.svelte";
     import { parseFuzzyTime } from "./fuzzyDate";
     import TimeZonePicker from "./TimeZonePicker.svelte";
     import { isZonedTime, makePlainTime, parsePlainTime, parseZonedTime, type PlainTimeString, type ZonedTimeString } from "./time";
+    import PopupButton from "../PopupButton.svelte";
+  import { Temporal } from "@js-temporal/polyfill";
 
     let { value = $bindable(), onchange }: {
         value: ZonedTimeString | PlainTimeString,
@@ -14,95 +14,60 @@
     function formatTime(value: ZonedTimeString | PlainTimeString) {
         if(isZonedTime(value)) {
             // If the zone isn't our current timezone, show the local time
-            const currentZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const localZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
             const { time, zone } = parseZonedTime(value);
-            const localTime = zone === currentZone ? "" :
-                " (" + time.toLocaleString(undefined, { hour: "numeric", minute: "2-digit" }) + ")";
+            // A zoned date time with the date set to today.
+            const zdt = Temporal.Now.zonedDateTimeISO(zone).withPlainTime(time);
+
+            const localTime = zone === localZone ? "" :
+                " (" + zdt.withTimeZone(localZone).toLocaleString(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" }) + ")";
+            
+            return zdt.toLocaleString(undefined, {
+                hour: "numeric",
+                minute: "2-digit",
+                second: time.second !== 0 ? "2-digit" : undefined,
+                timeZoneName: "shortGeneric"
+            }) + localTime;
+        } else {
+            const time = parsePlainTime(value);
             return time.toLocaleString(undefined, {
                 hour: "numeric",
                 minute: "2-digit",
-                timeZone: zone,
-                timeZoneName: zone === currentZone ? undefined : "short"
-            }) + localTime;
-        } else {
-            return parsePlainTime(value).toLocaleString(undefined, {
-                hour: "numeric",
-                minute: "2-digit"
+                second: time.second !== 0 ? "2-digit" : undefined
             });
-        }
-    }
-
-    let pickerOpen = $state(false);
-
-    function windowClick(e: MouseEvent) {
-        const target = e.target as HTMLElement;
-        if(pickerOpen && !target.closest(".picker") && !target.closest(".time-input")) {
-            pickerOpen = false;
         }
     }
 
     let interpretInputDate = $state(formatTime(value));
 </script>
 
-<svelte:window onclick={windowClick} />
-
-<div>
-    <button onclick={() => pickerOpen = !pickerOpen} class="time-input" title={value}>
-        {formatTime(value)}
-    </button>
-
-    {#if pickerOpen}
-        <dialog
-            open
-            onclose={() => pickerOpen = false}
-            transition:fly={{ duration: 150, easing: easeInOutQuad, y: -15 }}
-            class="picker"
-        >
-            <!-- TODO: Timezone picking idk -->
-            <div class="interpret">
-                <input type="text" bind:value={interpretInputDate} />
-                <button onclick={() => {
-                    const date = parseFuzzyTime(interpretInputDate);
-                    if(date && date.result) {
-                        value = makePlainTime(date.result);
-                        onchange();
-                        interpretInputDate = formatTime(value);
-                    }
-                }}>Set</button>
-            </div>
-            <svelte:boundary>
-                {@const date = parseFuzzyTime(interpretInputDate)}
-                {#if date && date.result}
-                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatTime(makePlainTime(date.result))}</span>
-                {:else}
-                    <span class="could-not-interpret">Could not interpret date</span>
-                {/if}
-            </svelte:boundary>
-            <hr />
-            <TimePicker bind:value {onchange} />
-            <hr />
-            <TimeZonePicker bind:value {onchange} />
-        </dialog>
-    {/if}
-</div>
+<PopupButton text={formatTime(value)} title={value}>
+    <div class="interpret">
+        <input type="text" bind:value={interpretInputDate} />
+        <button onclick={() => {
+            const date = parseFuzzyTime(interpretInputDate);
+            if(date && date.result) {
+                value = makePlainTime(date.result);
+                onchange();
+                interpretInputDate = formatTime(value);
+            }
+        }}>Set</button>
+    </div>
+    <svelte:boundary>
+        {@const date = parseFuzzyTime(interpretInputDate)}
+        {#if date && date.result}
+            <span class="interpreting-as" title={date.explanation}>Interpreting {formatTime(makePlainTime(date.result))}</span>
+        {:else}
+            <span class="could-not-interpret">Could not interpret date</span>
+        {/if}
+    </svelte:boundary>
+    <hr />
+    <TimePicker bind:value {onchange} />
+    <hr />
+    <TimeZonePicker bind:value {onchange} />
+</PopupButton>
 
 <style>
-div {
-    position: relative;
-    display: inline;
-}
-dialog {
-    border-radius: 5px;
-    padding: 0.5rem;
-    border: 2px solid var(--surface-1-border);
-    background-color: var(--surface-0);
-    position: absolute;
-    top: 2rem;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-}
-
 hr {
     border: none;
     border-top: 1px solid var(--surface-1-border);

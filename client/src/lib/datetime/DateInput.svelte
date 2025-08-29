@@ -1,9 +1,8 @@
 <script lang="ts">
-    import { fly } from "svelte/transition";
-    import { easeInOutQuad } from "../util/time";
     import DatePicker from "./DatePicker.svelte";
     import { parseFuzzyDate } from "./fuzzyDate";
     import { makePlainDate, parsePlainDate, type PlainDateString } from "./time";
+    import PopupButton from "../PopupButton.svelte";
 
     let { value = $bindable(), onchange }: {
         value: PlainDateString,
@@ -19,74 +18,34 @@
         });
     }
 
-    let pickerOpen = $state(false);
-
-    function windowClick(e: MouseEvent) {
-        const target = e.target as HTMLElement;
-        if(pickerOpen && !target.closest(".picker") && !target.closest(".date-input")) {
-            pickerOpen = false;
-        }
-    }
-
     let interpretInputDate = $state(formatDate(value));
 </script>
 
-<svelte:window onclick={windowClick} />
-
-<div>
-    <button onclick={() => pickerOpen = !pickerOpen} class="date-input" title={value}>
-        {formatDate(value)}
-    </button>
-
-    {#if pickerOpen}
-        <dialog
-            open
-            onclose={() => pickerOpen = false}
-            transition:fly={{ duration: 150, easing: easeInOutQuad, y: -15 }}
-            class="picker"
-        >
-            <div class="interpret">
-                <input type="text" bind:value={interpretInputDate} />
-                <button onclick={() => {
-                    const date = parseFuzzyDate(interpretInputDate);
-                    if(date && date.result) {
-                        value = makePlainDate(date.result);
-                        onchange();
-                        interpretInputDate = formatDate(value);
-                    }
-                }}>Set</button>
-            </div>
-            <svelte:boundary>
-                {@const date = parseFuzzyDate(interpretInputDate)}
-                {#if date && date.result}
-                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatDate(makePlainDate(date.result))}</span>
-                {:else}
-                    <span class="could-not-interpret">Could not interpret date</span>
-                {/if}
-            </svelte:boundary>
-            <hr />
-            <DatePicker bind:value onchange={() => { onchange(); }} />
-        </dialog>
-    {/if}
-</div>
+<PopupButton text={formatDate(value)} title={value}>
+    <div class="interpret">
+        <input type="text" bind:value={interpretInputDate} />
+        <button onclick={() => {
+            const date = parseFuzzyDate(interpretInputDate);
+            if(date && date.result) {
+                value = makePlainDate(date.result);
+                onchange();
+                interpretInputDate = formatDate(value);
+            }
+        }}>Set</button>
+    </div>
+    <svelte:boundary>
+        {@const date = parseFuzzyDate(interpretInputDate)}
+        {#if date && date.result}
+            <span class="interpreting-as" title={date.explanation}>Interpreting {formatDate(makePlainDate(date.result))}</span>
+        {:else}
+            <span class="could-not-interpret">Could not interpret date</span>
+        {/if}
+    </svelte:boundary>
+    <hr />
+    <DatePicker bind:value onchange={() => { onchange(); }} />
+</PopupButton>
 
 <style>
-div {
-    position: relative;
-    display: inline;
-}
-dialog {
-    border-radius: 5px;
-    padding: 0.5rem;
-    border: 2px solid var(--surface-1-border);
-    background-color: var(--surface-0);
-    position: absolute;
-    top: 2rem;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-}
-
 hr {
     border: none;
     border-top: 1px solid var(--surface-1-border);
