@@ -1,23 +1,25 @@
 <script lang="ts">
-    import type { LocalTimeOnly, ZonedTimeOnly } from ".";
     import { fly } from "svelte/transition";
     import { easeInOutQuad } from "../util/time";
-    import TimePicker from "./TimePicker.svelte";
-    import { parseFuzzyTime } from "./fuzzyDate";
-    import TimeZonePicker from "./TimeZonePicker.svelte";
-    import { stripZoneId } from "./timeZones";
+    import DatePicker from "./DatePicker.svelte";
+    import { parseFuzzyDate } from "./fuzzyDate";
+    import { parseZonedDateTime, type ZonedDateTimeString } from "./time";
+    import { Temporal } from "@js-temporal/polyfill";
 
     let { value = $bindable(), onchange }: {
-        value: LocalTimeOnly | ZonedTimeOnly,
+        value: ZonedDateTimeString,
         onchange: () => void
     } = $props();
 
-    function formatTime(value: LocalTimeOnly | ZonedTimeOnly) {
-        // Use the current day for this date
-        const date = new Date((new Date()).toISOString().split('T')[0] + stripZoneId(value));
-        return date.toLocaleString(undefined, {
-            hour: "numeric",
-            minute: "2-digit"
+    function formatDate(value: ZonedDateTimeString) {
+        const zdt = parseZonedDateTime(value);
+        const currentZone = Temporal.Now.timeZoneId();
+        return zdt.toLocaleString(undefined, {
+            weekday: "short",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            timeZoneName: currentZone === zdt.timeZoneId ? undefined : "short",
         });
     }
 
@@ -25,19 +27,19 @@
 
     function windowClick(e: MouseEvent) {
         const target = e.target as HTMLElement;
-        if(pickerOpen && !target.closest(".picker") && !target.closest(".time-input")) {
+        if(pickerOpen && !target.closest(".picker") && !target.closest(".date-input")) {
             pickerOpen = false;
         }
     }
 
-    let interpretInputDate = $state(formatTime(value));
+    let interpretInputDate = $state(formatDate(value));
 </script>
 
 <svelte:window onclick={windowClick} />
 
 <div>
-    <button onclick={() => pickerOpen = !pickerOpen} class="time-input" title={value}>
-        {formatTime(value)}
+    <button onclick={() => pickerOpen = !pickerOpen} class="date-input" title={value}>
+        {formatDate(value)}
     </button>
 
     {#if pickerOpen}
@@ -47,30 +49,27 @@
             transition:fly={{ duration: 150, easing: easeInOutQuad, y: -15 }}
             class="picker"
         >
-            <!-- TODO: Timezone picking idk -->
             <div class="interpret">
                 <input type="text" bind:value={interpretInputDate} />
                 <button onclick={() => {
-                    const date = parseFuzzyTime(interpretInputDate);
-                    if(date && date.isoTime) {
-                        value = date.isoTime;
+                    const date = parseFuzzyDate(interpretInputDate);
+                    if(date && date.result) {
+                        value = date.result;
                         onchange();
-                        interpretInputDate = formatTime(value);
+                        interpretInputDate = formatDate(value);
                     }
                 }}>Set</button>
             </div>
             <svelte:boundary>
-                {@const date = parseFuzzyTime(interpretInputDate)}
-                {#if date && date.isoTime}
-                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatTime(date.isoTime)}</span>
+                {@const date = parseFuzzyDate(interpretInputDate)}
+                {#if date && date.dateString}
+                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatDate(date.dateString)}</span>
                 {:else}
                     <span class="could-not-interpret">Could not interpret date</span>
                 {/if}
             </svelte:boundary>
             <hr />
-            <TimeZonePicker bind:value {onchange} />
-            <hr />
-            <TimePicker bind:value {onchange} />
+            <DatePicker bind:value onchange={() => { onchange(); }} />
         </dialog>
     {/if}
 </div>

@@ -32,6 +32,7 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.1",
     "@hocuspocus/provider": "^3.2.3",
+    "@js-temporal/polyfill": "^0.5.1",
     "@lezer/common": "^1.2.3",
     "@lezer/highlight": "^1.2.1",
     "@lezer/markdown": "^1.4.3",

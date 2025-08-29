@@ -24,7 +24,7 @@ class Router<
     private set: (value: string) => void;
 
     public component: Writable<Component | null>;
-    private routeName: string | null = null;
+    public currentRoute: string | null = null;
     public matches: RegExpMatchArray | null = null;
 
     constructor(private paths: Paths) {
@@ -46,7 +46,7 @@ class Router<
         const matchedPath = this.paths.find(p => p.matcher.test(path));
         if (matchedPath) {
             this.matches = path.match(matchedPath.matcher);
-            this.routeName = matchedPath.name;
+            this.currentRoute = matchedPath.name;
             return matchedPath.component;
         } else {
             this.navigate("/");
@@ -64,7 +64,7 @@ class Router<
      * match the provided matches (did I say match enough?)
      */
     public onRoute(name: RouteNamesFrom<Paths>, matches?: string[]): boolean {
-        if(this.routeName === name) {
+        if(this.currentRoute === name) {
             if(matches) {
                 const routeMatches = this.matches;
                 return routeMatches !== null &&

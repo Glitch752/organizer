@@ -1,74 +1,27 @@
 <script lang="ts">
-    import type { DateTime, LocalTimeOnly } from ".";
-    import { stripZoneId } from "./timeZones";
+    import { Temporal } from "@js-temporal/polyfill";
+    import { getPlainTime, updateTimeString, type PlainTimeString, type ZonedTimeString } from "./time";
 
     let { value = $bindable(), onchange }: {
-        value: DateTime | LocalTimeOnly,
+        value: ZonedTimeString | PlainTimeString,
         onchange: () => void
     } = $props();
 
-    // Parse the current time value and convert to local timezone
-    const currentLocalTime = $derived(() => {
-        if(value.startsWith('T')) {
-            // TimeOnly format; this will work with either a local or zoned time
-            const timeStr = stripZoneId(value).substring(1);
-            const today = new Date();
-            const utcDate = new Date(`${today.toISOString().split('T')[0]}T${timeStr}`);
-            return utcDate;
-        } else if(value.includes('T')) {
-            // DateTime format - parse as UTC and convert to local
-            const utcDate = new Date(value);
-            return utcDate;
-        } else {
-            // Fallback
-            return new Date();
-        }
-    });
+    const currentLocalTime = $derived(() => getPlainTime(value));
+    const currentHour = $derived(() => currentLocalTime().hour);
+    const currentMinute = $derived(() => currentLocalTime().minute);
+    const currentSecond = $derived(() => currentLocalTime().second);
 
-    const currentHour = $derived(() => currentLocalTime().getHours());
-    const currentMinute = $derived(() => currentLocalTime().getMinutes());
-    const currentSecond = $derived(() => currentLocalTime().getSeconds());
-
-    // State for the time picker
-    let selectedHour = $state(0);
-    let selectedMinute = $state(0);
-    let selectedSecond = $state(0);
+    // svelte-ignore state_referenced_locally Intentional
+    let selectedHour = $state(currentHour());
+    // svelte-ignore state_referenced_locally Intentional
+    let selectedMinute = $state(currentMinute());
+    // svelte-ignore state_referenced_locally Intentional
+    let selectedSecond = $state(currentSecond());
     let editingField = $state<'hour' | 'minute' | 'second' | null>(null);
 
-    // Initialize with current time
-    $effect(() => {
-        selectedHour = currentHour();
-        selectedMinute = currentMinute();
-        selectedSecond = currentSecond();
-    });
-
     function updateTime() {
-        // Create a local date with the selected time
-        let localDate: Date;
-        
-        if(value.startsWith('T')) {
-            // TimeOnly format - use today's date with the selected time
-            const today = new Date();
-            localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 
-                               selectedHour, selectedMinute, selectedSecond);
-        } else {
-            // DateTime format - preserve the original date but update time in local timezone
-            const originalDate = new Date(value);
-            localDate = new Date(originalDate.getFullYear(), originalDate.getMonth(), originalDate.getDate(), 
-                               selectedHour, selectedMinute, selectedSecond);
-        }
-        
-        if(value.startsWith('T')) {
-            // Only replace the time, not other data like the time zone offset or identifier
-            const hours = localDate.getHours().toString().padStart(2, '0');
-            const minutes = localDate.getMinutes().toString().padStart(2, '0');
-            const seconds = localDate.getSeconds().toString().padStart(2, '0');
-            const timeRegex = /T\d{2}:\d{2}:\d{2}(\.\d+)?/;
-            value = value.replace(timeRegex, `T${hours}:${minutes}:${seconds}`);
-        } else {
-            // DateTime format - convert to UTC and format
-            value = localDate.toISOString();
-        }
+        value = updateTimeString(value, selectedHour, selectedMinute, selectedSecond);
         
         onchange();
     }
@@ -95,10 +48,10 @@
     }
 
     function setToNow() {
-        const now = new Date();
-        selectedHour = now.getHours();
-        selectedMinute = now.getMinutes();
-        selectedSecond = now.getSeconds();
+        const now = Temporal.Now.plainDateTimeISO();
+        selectedHour = now.hour;
+        selectedMinute = now.minute;
+        selectedSecond = now.second;
         updateTime();
     }
 
@@ -120,12 +73,12 @@
         const target = event.target as HTMLInputElement;
         const value = parseInt(target.value);
         
-        if (!isNaN(value)) {
-            if (field === 'hour' && value >= 0 && value <= 23) {
+        if(!isNaN(value)) {
+            if(field === 'hour' && value >= 0 && value <= 23) {
                 selectedHour = value;
-            } else if (field === 'minute' && value >= 0 && value <= 59) {
+            } else if(field === 'minute' && value >= 0 && value <= 59) {
                 selectedMinute = value;
-            } else if (field === 'second' && value >= 0 && value <= 59) {
+            } else if(field === 'second' && value >= 0 && value <= 59) {
                 selectedSecond = value;
             }
             updateTime();

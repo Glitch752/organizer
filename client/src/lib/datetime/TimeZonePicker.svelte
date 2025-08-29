@@ -1,30 +1,28 @@
 <script lang="ts">
-    import type { LocalTimeOnly, ZonedTimeOnly } from ".";
-    import { getTimeZones, type TimeZoneData } from "./timeZones";
+    import { getPlainTime, getTimeZones, isZonedTime, makePlainTime, makeZonedTime, parseZonedTime, type PlainTimeString, type TimeZoneData, type ZonedTimeString } from "./time";
 
     let { value = $bindable(), onchange }: {
-        value: LocalTimeOnly | ZonedTimeOnly,
+        value: ZonedTimeString | PlainTimeString,
         onchange: () => void
     } = $props();
 
     // Common time zones with their offsets
     const timeZones: TimeZoneData[] = [
-        { label: "Local", offset: null, description: "Your local time zone" },
+        { id: "Local", offset: null, description: "Your local time zone" },
         ...getTimeZones()
     ];
 
     // Determine current selection
     const currentSelection = $derived(() => {
-        if(!value.includes('+') && !value.includes('-')) {
-            // Local time (no offset)
+        if(!isZonedTime(value)) {
             return timeZones[0]; // "Local"
         }
 
-        // If there's a zone ID, use that
-        const idMatch = value.match(/\[[a-zA-Z/-_]+\]/);
+        const { zone } = parseZonedTime(value);
+        const idMatch = timeZones.find(tz => tz.id === zone) ? value.match(/\[(.+?)\]$/) : null;
         if(idMatch) {
             const id = idMatch[1];
-            const matchingZone = timeZones.find(tz => tz.label === id);
+            const matchingZone = timeZones.find(tz => tz.id === id);
             if(matchingZone) return matchingZone;
         }
         
@@ -33,23 +31,20 @@
         if(offsetMatch) {
             const offset = offsetMatch[1];
             const matchingZone = timeZones.find(tz => tz.offset === offset);
-            return matchingZone || { label: "Custom", offset, description: `UTC${offset}` };
+            return matchingZone || { id: "Custom", offset, description: `UTC${offset}` };
         }
         
         return timeZones[0]; // Fallback to local
     });
 
     function selectTimeZone(timeZone: typeof timeZones[0]) {
-        // Extract the time portion from the current value
-        const timeMatch = value.match(/T(\d{2}:\d{2}:\d{2})/);
-        const timePortion = timeMatch ? timeMatch[1] : "00:00:00";
-        
-        if (timeZone.offset === null) {
-            // Local time - no offset
-            value = `T${timePortion}` as LocalTimeOnly;
+        const currentTime = getPlainTime(value);
+        if(timeZone.offset === null) {
+            // Local, plain time
+            value = makePlainTime(currentTime);
         } else {
-            // Zoned time - with offset
-            value = `T${timePortion}${timeZone.offset}[${timeZone.label}]` as ZonedTimeOnly;
+            // Zoned time
+            value = makeZonedTime(currentTime, timeZone.id);
         }
         
         onchange();
@@ -58,7 +53,7 @@
 
 <div class="timezone-picker">
     <div class="current-selection">
-        <span class="selected-zone">{currentSelection().label}</span>
+        <span class="selected-zone">{currentSelection().id}</span>
         <span class="selected-description">{currentSelection().description}</span>
         {#if currentSelection().offset}
             <span class="selected-offset">UTC{currentSelection().offset}</span>
@@ -69,11 +64,11 @@
         {#each timeZones as timeZone}
             <button 
                 class="timezone-option"
-                class:selected={currentSelection().label === timeZone.label && currentSelection().offset === timeZone.offset}
+                class:selected={currentSelection().id === timeZone.id && currentSelection().offset === timeZone.offset}
                 onclick={() => selectTimeZone(timeZone)}
             >
                 <div class="timezone-main">
-                    <span class="timezone-label">{timeZone.label}</span>
+                    <span class="timezone-label">{timeZone.id}</span>
                     {#if timeZone.offset}
                         <span class="timezone-offset">UTC{timeZone.offset}</span>
                     {/if}
@@ -92,6 +87,9 @@
         border-radius: 5px;
         border: 2px solid var(--surface-1-border);
         overflow: hidden;
+
+        display: flex;
+        flex-direction: column;
     }
 
     .current-selection {

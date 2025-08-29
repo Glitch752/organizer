@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { currentDayPlus, EventConditionType, type EventCondition } from ".";
-  import RecurranceCondition from "./RecurranceCondition.svelte";
+    import { EventConditionType, type EventCondition } from ".";
+    import RecurranceCondition from "./RecurranceCondition.svelte";
+    import { currentDayPlus } from "./time";
 
     let { conditions = $bindable(), lastSeparator, onchange }: {
         conditions: EventCondition[],
