@@ -1,19 +1,17 @@
 <script lang="ts">
-    import type { DayOfYearOnly } from ".";
     import { fly } from "svelte/transition";
     import { easeInOutQuad } from "../util/time";
-    import TimePicker from "./TimePicker.svelte";
-    import TimeZonePicker from "./TimeZonePicker.svelte";
     import { parseFuzzyDayOfYear } from "./fuzzyDate";
+    import { makePlainMonthDay, parsePlainMonthDay, type PlainMonthDayString } from "./time";
+    import PlainMonthDayPicker from "./PlainMonthDayPicker.svelte";
 
     let { value = $bindable(), onchange }: {
-        value: DayOfYearOnly,
+        value: PlainMonthDayString,
         onchange: () => void
     } = $props();
 
-    function formatDay(value: DayOfYearOnly) {
-        const date = new Date((new Date()).getFullYear() + '-' + value);
-        return date.toLocaleString(undefined, {
+    function formatDay(value: PlainMonthDayString) {
+        return parsePlainMonthDay(value).toLocaleString(undefined, {
             month: "short",
             day: "numeric"
         });
@@ -49,8 +47,8 @@
                 <input type="text" bind:value={interpretInputDate} />
                 <button onclick={() => {
                     const date = parseFuzzyDayOfYear(interpretInputDate);
-                    if(date && date.dayOfYear) {
-                        value = date.dayOfYear;
+                    if(date && date.result) {
+                        value = makePlainMonthDay(date.result);
                         onchange();
                         interpretInputDate = formatDay(value);
                     }
@@ -58,16 +56,14 @@
             </div>
             <svelte:boundary>
                 {@const date = parseFuzzyDayOfYear(interpretInputDate)}
-                {#if date && date.dayOfYear}
-                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatDay(date.dayOfYear)}</span>
+                {#if date && date.result}
+                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatDay(makePlainMonthDay(date.result))}</span>
                 {:else}
                     <span class="could-not-interpret">Could not interpret date</span>
                 {/if}
             </svelte:boundary>
             <hr />
-            <TimeZonePicker bind:value {onchange} />
-            <hr />
-            <TimePicker bind:value {onchange} />
+            <PlainMonthDayPicker bind:value {onchange} />
         </dialog>
     {/if}
 </div>

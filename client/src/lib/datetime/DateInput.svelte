@@ -3,23 +3,19 @@
     import { easeInOutQuad } from "../util/time";
     import DatePicker from "./DatePicker.svelte";
     import { parseFuzzyDate } from "./fuzzyDate";
-    import { parseZonedDateTime, type ZonedDateTimeString } from "./time";
-    import { Temporal } from "@js-temporal/polyfill";
+    import { makePlainDate, parsePlainDate, type PlainDateString } from "./time";
 
     let { value = $bindable(), onchange }: {
-        value: ZonedDateTimeString,
+        value: PlainDateString,
         onchange: () => void
     } = $props();
 
-    function formatDate(value: ZonedDateTimeString) {
-        const zdt = parseZonedDateTime(value);
-        const currentZone = Temporal.Now.timeZoneId();
-        return zdt.toLocaleString(undefined, {
+    function formatDate(value: PlainDateString) {
+        return parsePlainDate(value).toLocaleString(undefined, {
             weekday: "short",
             year: "numeric",
             month: "short",
-            day: "numeric",
-            timeZoneName: currentZone === zdt.timeZoneId ? undefined : "short",
+            day: "numeric"
         });
     }
 
@@ -54,7 +50,7 @@
                 <button onclick={() => {
                     const date = parseFuzzyDate(interpretInputDate);
                     if(date && date.result) {
-                        value = date.result;
+                        value = makePlainDate(date.result);
                         onchange();
                         interpretInputDate = formatDate(value);
                     }
@@ -62,8 +58,8 @@
             </div>
             <svelte:boundary>
                 {@const date = parseFuzzyDate(interpretInputDate)}
-                {#if date && date.dateString}
-                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatDate(date.dateString)}</span>
+                {#if date && date.result}
+                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatDate(makePlainDate(date.result))}</span>
                 {:else}
                     <span class="could-not-interpret">Could not interpret date</span>
                 {/if}

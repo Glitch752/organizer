@@ -1,12 +1,12 @@
 <script lang="ts">
     import { conditionTypes, EventConditionType, type EventCondition } from ".";
-    import DateInput from "./DateInput.svelte";
-    import DayOfYearListInput from "./DayOfYearListInput.svelte";
-    import MonthInput from "./MonthInput.svelte";
+    import DateInput from "../datetime/DateInput.svelte";
+    import DayOfYearListInput from "../datetime/DayOfYearListInput.svelte";
+    import MonthInput from "../datetime/MonthInput.svelte";
+    import WeekdayInput from "../datetime/WeekdayInput.svelte";
     import NumberListInput from "./NumberListInput.svelte";
-    import WeekdayInput from "./WeekdayInput.svelte";
     import RecurranceCondition from "./RecurranceCondition.svelte";
-  import RecurranceConditionList from "./RecurranceConditionList.svelte";
+    import RecurranceConditionList from "./RecurranceConditionList.svelte";
 
     let { condition = $bindable(), onchange }: {
         condition: EventCondition,

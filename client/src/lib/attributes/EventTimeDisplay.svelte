@@ -1,9 +1,9 @@
 <script lang="ts">
     import { TimeType, timeTypes, type EventTime } from ".";
-    import DateInput from "./DateInput.svelte";
-    import DateTimeInput from "./DateTimeInput.svelte";
-  import RecurranceCondition from "./RecurranceCondition.svelte";
-    import TimeInput from "./TimeInput.svelte";
+    import DateInput from "../datetime/DateInput.svelte";
+    import DateTimeInput from "../datetime/DateTimeInput.svelte";
+    import TimeInput from "../datetime/TimeInput.svelte";
+    import RecurranceCondition from "./RecurranceCondition.svelte";
 
     let { time = $bindable(), onchange, onremove }: {
         time: EventTime,

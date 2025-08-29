@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { getPlainTime, getTimeZones, isZonedTime, makePlainTime, makeZonedTime, parseZonedTime, type PlainTimeString, type TimeZoneData, type ZonedTimeString } from "./time";
+    import { getPlainTime, getTimeZones, isZonedDateTime, isZonedTime, makePlainTime, makeZonedDateTime, makeZonedTime, parseZonedDateTime, parseZonedTime, type PlainTimeString, type TimeZoneData, type ZonedDateTimeString, type ZonedTimeString } from "./time";
 
     let { value = $bindable(), onchange }: {
-        value: ZonedTimeString | PlainTimeString,
+        value: ZonedDateTimeString | ZonedTimeString | PlainTimeString,
         onchange: () => void
     } = $props();
 
@@ -39,7 +39,11 @@
 
     function selectTimeZone(timeZone: typeof timeZones[0]) {
         const currentTime = getPlainTime(value);
-        if(timeZone.offset === null) {
+        if(isZonedDateTime(value)) {
+            // Zoned date-time
+            const zdt = parseZonedDateTime(value).withTimeZone(timeZone.id);
+            value = makeZonedDateTime(zdt);
+        } else if(timeZone.offset === null) {
             // Local, plain time
             value = makePlainTime(currentTime);
         } else {

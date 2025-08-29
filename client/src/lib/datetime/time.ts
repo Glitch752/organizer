@@ -66,6 +66,7 @@ export function parsePlainDate(str: PlainDateString): Temporal.PlainDate {
     const match = /^PlainDate\|(.+)$/.exec(str);
     if(!match) try {
         // Best-effort parsing
+        if(str.includes("T")) return Temporal.PlainDate.from(str.split("T")[0]);
         return Temporal.PlainDate.from(str);
     } catch { throw new Error(`Invalid PlainDateString ${str}`); }
     return Temporal.PlainDate.from(match[1]);
@@ -92,6 +93,7 @@ export function parseZonedDateTime(str: ZonedDateTimeString): Temporal.ZonedDate
     const match = /^ZonedDateTime\|(.+)$/.exec(str);
     if(!match) try {
         // Best-effort parsing
+        if(str.endsWith("Z")) return Temporal.ZonedDateTime.from(str.replace(/Z$/, "[UTC]"));
         return Temporal.ZonedDateTime.from(str);
     } catch { throw new Error(`Invalid ZonedDateTimeString ${str}`); }
     return Temporal.ZonedDateTime.from(match[1]);
@@ -123,27 +125,78 @@ export function parseZonedTime(str: ZonedTimeString): { time: Temporal.PlainTime
     };
 }
 
-export function getPlainTime(str: ZonedTimeString | PlainTimeString): Temporal.PlainTime {
+export function parsePlainMonthDay(str: PlainMonthDayString): Temporal.PlainMonthDay {
+    const match = /^PlainMonthDay\|(.+)$/.exec(str);
+    if(!match) try {
+        // Best-effort parsing
+        return Temporal.PlainMonthDay.from(str);
+    } catch { throw new Error(`Invalid PlainMonthDayString ${str}`); }
+    return Temporal.PlainMonthDay.from(match[1]);
+}
+
+export function makePlainMonthDay(pmd: Temporal.PlainMonthDay): PlainMonthDayString {
+    return `PlainMonthDay|${pmd.toString({ calendarName: "always" })}` as PlainMonthDayString;
+}
+
+export function getPlainTime(str: ZonedDateTimeString | ZonedTimeString | PlainTimeString): Temporal.PlainTime {
     if(isZonedTime(str)) {
         return parseZonedTime(str).time;
-    } else {
+    } else if(isPlainTime(str)) {
         return parsePlainTime(str);
+    } else {
+        return parseZonedDateTime(str).toPlainTime();
     }
 }
 
 /**
  * Creates a new time string of the same format/timezone as the original, but with the specified hour, minute, and second.
  */
-export function updateTimeString<T extends ZonedTimeString | PlainTimeString>(original: T, hour: number, minute: number, second: number): T {
+export function updateTimeString<T extends ZonedDateTimeString | ZonedTimeString | PlainTimeString>(original: T, hour: number, minute: number, second: number): T {
     if(isZonedTime(original)) {
         const { time, zone } = parseZonedTime(original);
         const newTime = time.with({ hour, minute, second });
         return makeZonedTime(newTime, zone) as T;
+    } else if(isZonedDateTime(original)) {
+        const zdt = parseZonedDateTime(original);
+        const newZdt = zdt.with({ hour, minute, second });
+        return makeZonedDateTime(newZdt) as T;
     } else {
         const time = parsePlainTime(original);
         const newTime = time.with({ hour, minute, second });
         return makePlainTime(newTime) as T;
     }
+}
+
+export function getPlainDate(str: ZonedDateTimeString | PlainDateString): Temporal.PlainDate {
+    if(isZonedDateTime(str)) {
+        return parseZonedDateTime(str).toPlainDate();
+    } else {
+        return parsePlainDate(str);
+    }
+}
+
+/**
+ * Creates a new date string of the same format/timezone as the original, but with the specified year, month, and day.
+ */
+export function updateDateString<T extends ZonedDateTimeString | PlainDateString>(original: T, year: number, month: number, day: number): T {
+    if(isZonedDateTime(original)) {
+        const zdt = parseZonedDateTime(original);
+        const newZdt = zdt.with({ year, month, day });
+        return makeZonedDateTime(newZdt) as T;
+    } else {
+        const date = parsePlainDate(original);
+        const newDate = date.with({ year, month, day });
+        return makePlainDate(newDate) as T;
+    }
+}
+
+/**
+ * Sets the date of the given zoned date-time string to the specified date, preserving the time and timezone.
+ */
+export function setDateOfZonedDateTime(original: ZonedDateTimeString, newDate: Temporal.PlainDate): ZonedDateTimeString {
+    const zdt = parseZonedDateTime(original);
+    const updated = zdt.with({ year: newDate.year, month: newDate.month, day: newDate.day });
+    return makeZonedDateTime(updated);
 }
 
 export function isZonedTime(str: String): str is ZonedTimeString {

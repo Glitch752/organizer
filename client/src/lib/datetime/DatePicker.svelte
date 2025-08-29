@@ -1,34 +1,23 @@
 <script lang="ts">
-    import type { DateOnly, DateTime } from ".";
+    import { getPlainDate, updateDateString, type PlainDateString, type ZonedDateTimeString } from "./time";
 
     let { value = $bindable(), onchange }: {
-        value: DateTime | DateOnly,
+        value: ZonedDateTimeString | PlainDateString,
         onchange: () => void
     } = $props();
 
     // Parse the current date value and convert to local timezone
-    const currentLocalDate = $derived(() => {
-        if(value.includes('T')) {
-            // DateTime format - parse as UTC and convert to local
-            return new Date(value);
-        } else {
-            // DateOnly format - treat as local date (avoid timezone issues)
-            const [year, month, day] = value.split('-').map(Number);
-            return new Date(year, month - 1, day);
-        }
-    });
+    const currentLocalDate = $derived(() => getPlainDate(value));
 
-    const currentYear = $derived(() => currentLocalDate().getFullYear());
-    const currentMonth = $derived(() => currentLocalDate().getMonth());
-    const currentDay = $derived(() => currentLocalDate().getDate());
+    const currentYear = $derived(() => currentLocalDate().year);
+    /** NOTE: This is a 0-indexed month, unlike what Temporal uses. */
+    const currentMonth = $derived(() => currentLocalDate().month - 1);
+    const currentDay = $derived(() => currentLocalDate().day);
 
-    let viewYear = $state(0);
-    let viewMonth = $state(0);
-
-    $effect(() => {
-        viewYear = currentYear();
-        viewMonth = currentMonth();
-    });
+    // svelte-ignore state_referenced_locally Intentional
+    let viewYear = $state(currentYear());
+    // svelte-ignore state_referenced_locally Intentional
+    let viewMonth = $state(currentMonth());
 
     const monthNames = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -66,21 +55,7 @@
     });
 
     function selectDate(day: number) {
-        if(value.includes('T')) {
-            // DateTime format - preserve the time portion and create new date in local timezone
-            const originalDate = new Date(value);
-            const newDate = new Date(viewYear, viewMonth, day, 
-                                   originalDate.getHours(), originalDate.getMinutes(), originalDate.getSeconds(), originalDate.getMilliseconds());
-            value = newDate.toISOString();
-        } else {
-            // DateOnly format - create local date and format as YYYY-MM-DD
-            const newDate = new Date(viewYear, viewMonth, day);
-            const year = newDate.getFullYear();
-            const month = (newDate.getMonth() + 1).toString().padStart(2, '0');
-            const dayStr = newDate.getDate().toString().padStart(2, '0');
-            value = `${year}-${month}-${dayStr}`;
-        }
-        
+        value = updateDateString(value, viewYear, viewMonth + 1, day);
         onchange();
     }
 

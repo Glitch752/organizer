@@ -1,9 +1,9 @@
 <script lang="ts">
     import { Temporal } from "@js-temporal/polyfill";
-    import { getPlainTime, updateTimeString, type PlainTimeString, type ZonedTimeString } from "./time";
+    import { getPlainTime, updateTimeString, type PlainTimeString, type ZonedDateTimeString, type ZonedTimeString } from "./time";
 
     let { value = $bindable(), onchange }: {
-        value: ZonedTimeString | PlainTimeString,
+        value: ZonedDateTimeString | ZonedTimeString | PlainTimeString,
         onchange: () => void
     } = $props();
 

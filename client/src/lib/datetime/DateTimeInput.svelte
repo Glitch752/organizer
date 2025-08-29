@@ -1,25 +1,28 @@
 <script lang="ts">
-    import type { DateTime } from ".";
     import { fly } from "svelte/transition";
     import { easeInOutQuad } from "../util/time";
     import DatePicker from "./DatePicker.svelte";
     import TimePicker from "./TimePicker.svelte";
     import { parseFuzzyDateTime } from "./fuzzyDate";
+    import { makeZonedDateTime, parseZonedDateTime, type ZonedDateTimeString } from "./time";
+    import TimeZonePicker from "./TimeZonePicker.svelte";
+    import Portal from "../Portal.svelte";
 
     let { value = $bindable(), onchange }: {
-        value: DateTime,
+        value: ZonedDateTimeString,
         onchange: () => void
     } = $props();
 
-    function formatDatetime(value: DateTime) {
-        const date = new Date(value);
-        return date.toLocaleString(undefined, {
+    function formatDatetime(value: ZonedDateTimeString) {
+        const zdt = parseZonedDateTime(value);
+        return zdt.toLocaleString(undefined, {
             weekday: "short",
             year: "numeric",
             month: "short",
             day: "numeric",
             hour: "numeric",
             minute: "2-digit",
+            second: zdt.second !== 0 ? "2-digit" : undefined,
             timeZoneName: "shortGeneric"
         });
     }
@@ -44,40 +47,48 @@
     </button>
 
     {#if pickerOpen}
-        <dialog
-            open
-            onclose={() => pickerOpen = false}
-            transition:fly={{ duration: 150, easing: easeInOutQuad, y: -15 }}
-            class="picker"
-        >
-            <div class="interpret">
-                <input type="text" bind:value={interpretInputDate} />
-                <button onclick={() => {
-                    const date = parseFuzzyDateTime(interpretInputDate);
-                    if(date && date.isoUTC) {
-                        value = date.isoUTC;
-                        onchange();
-                        interpretInputDate = formatDatetime(value);
-                    }
-                }}>Set</button>
-            </div>
-            <svelte:boundary>
-                {@const date = parseFuzzyDateTime(interpretInputDate)}
-                {#if date && date.isoUTC}
-                    <span class="interpreting-as" title={date.explanation}>Interpreting {formatDatetime(date.isoUTC)}</span>
-                {:else}
-                    <span class="could-not-interpret">Could not interpret date</span>
-                {/if}
-            </svelte:boundary>
-            <hr />
-            <DatePicker bind:value onchange={() => { onchange(); }} />
-            <hr />
-            <TimePicker bind:value onchange={() => { onchange(); }} />
-        </dialog>
+        <Portal target="body">
+            <dialog
+                open
+                onclose={() => pickerOpen = false}
+                transition:fly={{ duration: 150, easing: easeInOutQuad, y: -15 }}
+                class="picker"
+            >
+                <div class="interpret">
+                    <input type="text" bind:value={interpretInputDate} />
+                    <button onclick={() => {
+                        const date = parseFuzzyDateTime(interpretInputDate);
+                        if(date && date.result) {
+                            value = makeZonedDateTime(date.result);
+                            onchange();
+                            interpretInputDate = formatDatetime(value);
+                        }
+                    }}>Set</button>
+                </div>
+                <svelte:boundary>
+                    {@const date = parseFuzzyDateTime(interpretInputDate)}
+                    {#if date && date.result}
+                        <span class="interpreting-as" title={date.explanation}>Interpreting {formatDatetime(makeZonedDateTime(date.result))}</span>
+                    {:else}
+                        <span class="could-not-interpret">Could not interpret date</span>
+                    {/if}
+                </svelte:boundary>
+                <hr />
+                <div class="content">
+                    <DatePicker bind:value onchange={() => { onchange(); }} />
+                    <hr class="column-separator" />
+                    <div class="column">
+                        <TimePicker bind:value onchange={() => { onchange(); }} />
+                        <hr />
+                        <TimeZonePicker bind:value {onchange} />
+                    </div>
+                </div>
+            </dialog>
+        </Portal>
     {/if}
 </div>
 
-<style>
+<style lang="scss">
 div {
     position: relative;
     display: inline;
@@ -122,5 +133,18 @@ hr {
     color: var(--color-error-text);
     font-size: 0.875rem;
     margin-top: 0.25rem;
+}
+
+.column-separator {
+    display: none;
+}
+.content {
+    display: flex;
+    flex-direction: row;
+
+    .column {
+        display: flex;
+        flex-direction: column;
+    }
 }
 </style>

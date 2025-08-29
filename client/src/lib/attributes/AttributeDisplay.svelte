@@ -1,7 +1,7 @@
 <script lang="ts">
     import { AttributeType, attributeTypes, type Attribute } from ".";
+  import DateTimeInput from "../datetime/DateTimeInput.svelte";
     import CalendarEventTimes from "./CalendarEventTimes.svelte";
-    import DateTimeInput from "./DateTimeInput.svelte";
 
     const { data = $bindable(), onchange, onremove }: {
         data: Attribute,
@@ -16,21 +16,27 @@
         <button class="remove" title="Remove attribute" onclick={onremove}>×</button>
     </header>
 
-    {#if data.type === AttributeType.CalendarEvent}
-    <label>
-        Enabled <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
-    </label>
-    <CalendarEventTimes bind:times={data.times} onchange={() => onchange(data)} />
-    {:else if data.type === AttributeType.CalendarDeadline}
-    <label>
-        Enabled <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
-    </label>
-    <label>
-        Due <DateTimeInput bind:value={data.due} onchange={() => onchange(data)} />
-    </label>
-    {:else}
-    <span>Unknown attribute type {(data as any).type}</span>
-    {/if}
+    <svelte:boundary>
+        {#if data.type === AttributeType.CalendarEvent}
+        <label>
+            Enabled <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
+        </label>
+        <CalendarEventTimes bind:times={data.times} onchange={() => onchange(data)} />
+        {:else if data.type === AttributeType.CalendarDeadline}
+        <label>
+            Enabled <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
+        </label>
+        <label>
+            Due <DateTimeInput bind:value={data.due} onchange={() => onchange(data)} />
+        </label>
+        {:else}
+        <span>Unknown attribute type {(data as any).type}</span>
+        {/if}
+        
+        {#snippet failed(error)}
+            <p>Failed to render attribute data. Try removing and re-adding it.</p>
+        {/snippet}
+    </svelte:boundary>
 </div>
 
 <style>

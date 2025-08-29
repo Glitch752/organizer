@@ -79,9 +79,9 @@
                 {/if}
             </svelte:boundary>
             <hr />
-            <TimeZonePicker bind:value {onchange} />
-            <hr />
             <TimePicker bind:value {onchange} />
+            <hr />
+            <TimeZonePicker bind:value {onchange} />
         </dialog>
     {/if}
 </div>
