@@ -278,10 +278,12 @@ export type EventTime = {
 
 export type Attribute = {
     type: AttributeType.CalendarEvent,
+    name?: string,
     enabled: boolean,
     times: EventTime[]
 } | {
     type: AttributeType.CalendarDeadline,
+    name?: string,
     enabled: boolean,
     due: ZonedDateTimeString
 };

@@ -1,13 +1,26 @@
 <script lang="ts">
 	import Header from "./lib/Header.svelte";
 	import Nav from "./lib/Nav.svelte";
+  	import { persistentState } from "./stores/persistent";
   	import { route } from "./stores/router";
 
 	let component = route.component;
+
+	let navOpen = persistentState<boolean>("navOpen", true);
+
+	function keydown(event: KeyboardEvent) {
+		// Ctrl+Shift+E toggles the nav
+		if(event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'e') {
+			navOpen.set(!$navOpen);
+			event.preventDefault();
+		}
+	}
 </script>
 
-<div class="app">
-	<Header />
+<svelte:window onkeydown={keydown} />
+
+<div class="app" class:navOpen={$navOpen}>
+	<Header bind:navOpen={$navOpen} />
 	<Nav />
 
 	<main>
@@ -16,12 +29,19 @@
 	</main>
 </div>
 
-<style>
+<style lang="scss">
 	.app {
 		display: grid;
-		grid-template-columns: 1fr 24rem;
+		grid-template-columns: 1fr 0;
 		grid-template-rows: auto 1fr;
 		height: 100vh;
+
+		// You can do this... for some reason
+		transition: grid-template-columns 200ms ease;
+	}
+
+	.app.navOpen {
+		grid-template-columns: 1fr var(--nav-width);
 	}
 
 	main {

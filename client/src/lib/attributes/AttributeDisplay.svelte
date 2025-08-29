@@ -19,15 +19,21 @@
     <svelte:boundary>
         {#if data.type === AttributeType.CalendarEvent}
         <label>
-            Enabled <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
+            <span>Enabled</span> <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
+        </label>
+        <label>
+            <span>Name</span> <input type="text" bind:value={data.name} onchange={() => onchange(data)} placeholder="Leave blank to use page title" />
         </label>
         <CalendarEventTimes bind:times={data.times} onchange={() => onchange(data)} />
         {:else if data.type === AttributeType.CalendarDeadline}
         <label>
-            Enabled <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
+            <span>Enabled</span> <input type="checkbox" bind:checked={data.enabled} onchange={() => onchange(data)} />
         </label>
         <label>
-            Due <DateTimeInput bind:value={data.due} onchange={() => onchange(data)} />
+            <span>Name</span> <input type="text" bind:value={data.name} onchange={() => onchange(data)} placeholder="Leave blank to use page title" />
+        </label>
+        <label>
+            <span>Due</span> <DateTimeInput bind:value={data.due} onchange={() => onchange(data)} />
         </label>
         {:else}
         <span>Unknown attribute type {(data as any).type}</span>
@@ -77,6 +83,11 @@ label {
     gap: 1rem;
     align-items: center;
     padding: 0 0.5rem;
+
+    /* Make text a consistent width */
+    > span {
+        width: 4rem;
+    }
 
     input[type=text] {
         flex: 1;

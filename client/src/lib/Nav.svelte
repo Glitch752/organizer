@@ -110,6 +110,8 @@
 
         margin: 0;
         gap: 0.5rem;
+
+        width: var(--nav-width);
     }
 
     .header {

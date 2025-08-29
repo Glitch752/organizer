@@ -49,15 +49,19 @@
 <style lang="scss">
 .header {
     position: relative;
+    display: flex;
+    gap: 1rem;
+    padding: 0 0.5rem;
+    margin-top: 0.25rem;
 }
 
 h4 {
-    display: inline;
+    display: inline-block;
     font-size: 1rem;
     margin: 0 0 0.25rem 0;
-    padding: 0 0.5rem;
     font-weight: normal;
     font-size: 1rem;
+    width: 4rem;
 }
 
 .event-times {
@@ -68,7 +72,7 @@ h4 {
 
 button.add {
     display: inline;
-    width: 5rem;
+    width: 6rem;
     color: var(--subtle-text);
     transition: color 0.2s ease;
 
@@ -80,7 +84,7 @@ button.add {
 .options {
     position: absolute;
     z-index: 10;
-    top: 1rem;
+    top: 0.75rem;
     left: 0;
     right: 0;
 
