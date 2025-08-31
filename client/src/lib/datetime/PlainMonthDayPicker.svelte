@@ -8,14 +8,14 @@
     } = $props();
 
     // Parse the current PlainMonthDay value
-    const currentMonthDay = $derived(() => parsePlainMonthDay(value));
+    const currentMonthDay = $derived(parsePlainMonthDay(value));
 
     /** NOTE: This is a 0-indexed month, unlike what Temporal uses. */
-    const currentMonth = $derived(() => currentMonthDay().toPlainDate({ year: 2024 }).month - 1);
-    const currentDay = $derived(() => currentMonthDay().day);
+    const currentMonth = $derived(currentMonthDay.toPlainDate({ year: 2024 }).month - 1);
+    const currentDay = $derived(currentMonthDay.day);
 
     // svelte-ignore state_referenced_locally Intentional
-    let viewMonth = $state(currentMonth());
+    let viewMonth = $state(currentMonth);
 
     const monthNames = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -23,15 +23,14 @@
     ];
 
     // Get the current month/day for highlighting "today"
-    const today = $derived(() => {
+    const today = $derived.by(() => {
         const now = Temporal.Now.plainDateISO();
         return { month: now.month - 1, day: now.day };
     });
 
-    // Calculate days in the current view month (using a reference year)
-    const daysInMonth = $derived(() => {
+    const daysInMonth = $derived.by(() => {
         const referenceYear = 2024; // Use a leap year to handle February correctly
-        return new Date(referenceYear, viewMonth + 1, 0).getDate();
+        return Temporal.PlainDate.from({ year: referenceYear, month: viewMonth + 1, day: 1 }).daysInMonth;
     });
 
     function selectDate(day: number) {
@@ -58,11 +57,11 @@
     </div>
     
     <div class="days-grid">
-        {#each Array.from({ length: daysInMonth() }, (_, i) => i + 1) as day}
+        {#each Array.from({ length: daysInMonth }, (_, i) => i + 1) as day}
             <button 
                 class="day"
-                class:selected={viewMonth === currentMonth() && day === currentDay()}
-                class:today={viewMonth === today().month && day === today().day}
+                class:selected={viewMonth === currentMonth && day === currentDay}
+                class:today={viewMonth === today.month && day === today.day}
                 onclick={() => selectDate(day)}
             >
                 {day}

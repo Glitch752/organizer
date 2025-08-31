@@ -3,6 +3,7 @@
     import { timeTypes, type EventTime } from ".";
     import { easeInOutQuad } from "../util/time";
     import EventTimeDisplay from "./EventTimeDisplay.svelte";
+    import { clickOff } from "../actions/clickOff.svelte";
 
     let { times = $bindable(), onchange }: {
         times: EventTime[],
@@ -12,15 +13,15 @@
     let adding = $state(false);
 </script>
 
-<svelte:window onclick={(e) => {
-    if(!(e.target as HTMLElement).closest('.options') && !(e.target as HTMLElement).closest('.add')) adding = false
-}} />
-
 <div class="header">
     <h4>Times</h4>
     <button class="add" title="Add attribute" onclick={() => adding = !adding}>+</button>
     {#if adding}
-        <ul class="options" transition:fly={{ duration: 150, easing: easeInOutQuad, y: -15 }}>
+        <ul
+            class="options"
+            use:clickOff={() => adding = false}
+            transition:fly={{ duration: 150, easing: easeInOutQuad, y: -15 }}
+        >
             {#each Object.entries(timeTypes) as [type, data]}
             <li>
                 <button onclick={() => {

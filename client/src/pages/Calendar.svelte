@@ -3,6 +3,7 @@
     import CalendarMonthView from "../lib/calendar/CalendarMonthView.svelte";
     import CalendarWeekView from "../lib/calendar/CalendarWeekView.svelte";
     import { calendarDisplay } from "../stores/calendar";
+    import { client } from "../lib/client";
 </script>
 
 {#if $calendarDisplay.displayType === "year"}
@@ -10,5 +11,5 @@
 {:else if $calendarDisplay.displayType === "month"}
     <CalendarMonthView bind:display={$calendarDisplay} />
 {:else}
-    <CalendarWeekView bind:display={$calendarDisplay} />
+    <CalendarWeekView bind:display={$calendarDisplay} {client} />
 {/if}

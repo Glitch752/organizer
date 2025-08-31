@@ -103,9 +103,29 @@ class Router<Paths extends RouterPathConstants> {
     }
 
     public navigate(path: string): void {
-        history.pushState({}, '', path);
         this.set(this.getPathData(path));
+        history.pushState({}, '', path);
+        console.log("Navigated to", path);
     }
+}
+
+/** A svelte action to make links route properly without reloading the page. */
+export function link(element: HTMLAnchorElement) {
+    function onClick(event: MouseEvent) {
+        if(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const href = element.getAttribute('href');
+        if(href && href.startsWith('/')) {
+            event.preventDefault();
+            route.navigate(href);
+        }
+    }
+    
+    element.addEventListener('click', onClick);
+    return {
+        destroy() {
+            element.removeEventListener('click', onClick);
+        }
+    };
 }
 
 export const route = new Router([

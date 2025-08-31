@@ -9,10 +9,10 @@
         selectDate: (year: number, month: number, day: number) => void
     } = $props();
 
-    const currentYear = $derived(() => date.year);
+    const currentYear = $derived(date.year);
     /** 1-indexed like in Temporal, not Date. */
-    const currentMonth = $derived(() => date.month);
-    const currentDay = $derived(() => date.day);
+    const currentMonth = $derived(date.month);
+    const currentDay = $derived(date.day);
 
     let viewYear = $derived(date.year);
     /** 1-indexed like in Temporal, not Date. */
@@ -23,15 +23,15 @@
         'July', 'August', 'September', 'October', 'November', 'December'
     ];
 
-    const daysInPreviousMonth = $derived(() =>
+    const daysInPreviousMonth = $derived(
         Temporal.PlainDate.from({ year: viewYear, month: viewMonth, day: 1 }).subtract({ months: 1 }).daysInMonth
     );
 
-    const daysInMonth = $derived(() =>
+    const daysInMonth = $derived(
         Temporal.PlainDate.from({ year: viewYear, month: viewMonth, day: 1 }).daysInMonth
     );
 
-    const firstDayOfMonth = $derived(() => {
+    const firstDayOfMonth = $derived.by(() => {
         const date = Temporal.PlainDate.from({ year: viewYear, month: viewMonth, day: 1 });
         return date.dayOfWeek % 7; // Temporal: 1=Monday, 7=Sunday; JS: 0=Sunday
     });
@@ -78,7 +78,7 @@
             {#snippet dayButton(year: number, month: number, day: number)}
                 <button
                     class="day"
-                    class:selected={viewYear === currentYear() && month === currentMonth() && day === currentDay()}
+                    class:selected={viewYear === currentYear && month === currentMonth && day === currentDay}
                     class:other-month={month !== viewMonth}
                     class:today={(() => {
                         const today = Temporal.Now.plainDateISO();
@@ -90,15 +90,15 @@
                 </button>
             {/snippet}
 
-            {#each Array(firstDayOfMonth()).fill(0).map((_, i) => daysInPreviousMonth() - firstDayOfMonth() + 1 + i) as day}
+            {#each Array(firstDayOfMonth).fill(0).map((_, i) => daysInPreviousMonth - firstDayOfMonth + 1 + i) as day}
                 {@render dayButton(viewMonth === 1 ? viewYear - 1 : viewYear, viewMonth === 1 ? 12 : viewMonth - 1, day)}
             {/each}
 
-            {#each Array(daysInMonth()).fill(0).map((_, i) => i + 1) as day}
+            {#each Array(daysInMonth).fill(0).map((_, i) => i + 1) as day}
                 {@render dayButton(viewYear, viewMonth, day)}
             {/each}
 
-            {#each Array(42 - (firstDayOfMonth() + daysInMonth())).fill(0).map((_, i) => i + 1) as day}
+            {#each Array(42 - (firstDayOfMonth + daysInMonth)).fill(0).map((_, i) => i + 1) as day}
                 {@render dayButton(viewMonth === 12 ? viewYear + 1 : viewYear, viewMonth === 12 ? 1 : viewMonth + 1, day)}
             {/each}
         </div>

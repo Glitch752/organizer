@@ -15,7 +15,7 @@
     ];
 
     // The current date for highlighting
-    const today = $derived(() => {
+    const today = $derived.by(() => {
         const now = Temporal.Now.plainDateISO();
         return { year: now.year, month: now.month, day: now.day };
     });
@@ -66,9 +66,9 @@
                                             display.selectedDay.month === month && 
                                             display.selectedDay.day === day.day && 
                                             day.month === month}
-                            class:today={today().year === display.selectedDay.year && 
-                                        today().month === month && 
-                                        today().day === day.day && 
+                            class:today={today.year === display.selectedDay.year && 
+                                        today.month === month && 
+                                        today.day === day.day && 
                                         day.month === month}
                             onclick={() => selectDay(day.month, day.day)}
                         >
@@ -155,7 +155,7 @@
         &.in-month {
             color: var(--color-text);
 
-            &:hover {
+            &:hover:not(.active) {
                 background-color: var(--subtle-background-highlight);
             }
         }

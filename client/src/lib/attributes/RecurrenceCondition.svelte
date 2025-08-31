@@ -5,8 +5,8 @@
     import MonthInput from "../datetime/MonthInput.svelte";
     import WeekdayInput from "../datetime/WeekdayInput.svelte";
     import NumberListInput from "./NumberListInput.svelte";
-    import RecurranceCondition from "./RecurranceCondition.svelte";
-    import RecurranceConditionList from "./RecurranceConditionList.svelte";
+    import RecurrenceCondition from "./RecurrenceCondition.svelte";
+    import RecurrenceConditionList from "./RecurrenceConditionList.svelte";
 
     let { condition = $bindable(), onchange }: {
         condition: EventCondition,
@@ -59,15 +59,15 @@
         <NumberListInput bind:value={condition.years} {onchange} min={1970} max={2100} />
     {:else if condition.type === EventConditionType.Not}
         <div class="nested">
-            <RecurranceCondition bind:condition={condition.condition} {onchange} />
+            <RecurrenceCondition bind:condition={condition.condition} {onchange} />
         </div>
         {:else if condition.type === EventConditionType.And}
         <div class="nested">
-            <RecurranceConditionList bind:conditions={condition.conditions} {onchange} lastSeparator="and" />
+            <RecurrenceConditionList bind:conditions={condition.conditions} {onchange} lastSeparator="and" />
         </div>
         {:else if condition.type === EventConditionType.Or}
         <div class="nested">
-            <RecurranceConditionList bind:conditions={condition.conditions} {onchange} lastSeparator="or" />
+            <RecurrenceConditionList bind:conditions={condition.conditions} {onchange} lastSeparator="or" />
         </div>
     {:else}
         <!-- Unknown condition type -->

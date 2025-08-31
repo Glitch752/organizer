@@ -1,17 +1,34 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
-    import Portal from "./Portal.svelte";
     import { easeInOutQuad } from "./util/time";
     import { fly } from "svelte/transition";
     import { clickOff } from "./actions/clickOff.svelte";
 
-    const { text, title, children }: {
-        text: string,
+    const {
+        text,
+        buttonContent,
+        title,
+        children,
+        keepInViewport = false,
+        padding = true,
+        onclose
+    }: {
+        text?: string,
+        buttonContent?: Snippet,
         title?: string,
-        children: Snippet
+        children: Snippet,
+        keepInViewport?: boolean,
+        padding?: boolean,
+        onclose?: () => void
     } = $props();
 
     let pickerOpen = $state(false);
+
+    let previousPickerOpen = false;
+    $effect(() => {
+        if(previousPickerOpen && !pickerOpen && onclose) onclose();
+        previousPickerOpen = pickerOpen;
+    });
 
     // svelte-ignore non_reactive_update Seems fine idk
     let button: HTMLButtonElement;
@@ -22,8 +39,13 @@
         top?: "top" | "bottom",
         left?: "left" | "right",
         bottom?: "top" | "bottom",
-        right?: "left" | "right"
+        right?: "left" | "right",
+
+        keepInViewport?: boolean
     }) {
+        // Scroll-linked positioning is a bit gross, but anchor positioning isn't widely available yet
+        // and the polyfill is a pain to use with Svelte
+
         el.style.position = "absolute";
 
         function nearestScrollableParent(el: HTMLElement): HTMLElement | null {
@@ -59,29 +81,59 @@
             // Calculate position relative to nearest positioned parent
             let top = 0, left = 0;
             if(options.top && options.left) {
-                top = rect[options.top] - parentRect.top;
-                left = rect[options.left] - parentRect.left;
+                top = rect[options.top];
+                left = rect[options.left];
             } else if(options.top && options.right) {
-                top = rect[options.top] - parentRect.top;
-                left = rect[options.right] - parentRect.left - elRect.width;
+                top = rect[options.top];
+                left = rect[options.right] - elRect.width;
             } else if(options.bottom && options.left) {
-                top = rect[options.bottom] - parentRect.top - elRect.height;
-                left = rect[options.left] - parentRect.left;
+                top = rect[options.bottom] - elRect.height;
+                left = rect[options.left];
             } else if(options.bottom && options.right) {
-                top = rect[options.bottom] - parentRect.top - elRect.height;
-                left = rect[options.right] - parentRect.left - elRect.width;
+                top = rect[options.bottom] - elRect.height;
+                left = rect[options.right] - elRect.width;
             }
+
+            if(options.keepInViewport) {
+                if(left < 0) left = 0;
+                if(top < 0) top = 0;
+                if(left + elRect.width > window.innerWidth) {
+                    left = window.innerWidth - elRect.width;
+                }
+                if(top + elRect.height > window.innerHeight) {
+                    top = window.innerHeight - elRect.height;
+                }
+            }
+
+            top = top - parentRect.top;
+            left = left - parentRect.left;
+
             el.style.top = `${top}px`;
             el.style.left = `${left}px`;
 
             const newRect = el.getBoundingClientRect();
             
             // Clamp the popup within its nearest scrollable parent
-            // We don't necessarily care that it's within
 
             if(scrollParent) {
                 // Super hacky, but whatever
-                const scrollRect = scrollParent.children[0].getBoundingClientRect();
+                let scrollRect = { 
+                    left: Infinity, 
+                    top: Infinity, 
+                    right: -Infinity, 
+                    bottom: -Infinity 
+                };
+                for(let i = 0; i < scrollParent.children.length; i++) {
+                    const childRect = scrollParent.children[i].getBoundingClientRect();
+                    scrollRect.left = Math.min(scrollRect.left, childRect.left);
+                    scrollRect.top = Math.min(scrollRect.top, childRect.top);
+                    scrollRect.right = Math.max(scrollRect.right, childRect.right);
+                    scrollRect.bottom = Math.max(scrollRect.bottom, childRect.bottom);
+                }
+                // Fall back to scrollParent's own rect if no children
+                if(scrollRect.left === Infinity) {
+                    scrollRect = scrollParent.getBoundingClientRect();
+                }
                 if(newRect.right > scrollRect.right) {
                     const overflow = newRect.right - scrollRect.right;
                     el.style.left = `${left - overflow}px`;
@@ -102,8 +154,9 @@
         }
         update();
 
-        const ro = new ResizeObserver(() => console.log("resized"));
+        const ro = new ResizeObserver(update);
         ro.observe(options.to);
+        ro.observe(el);
 
         window.addEventListener("scroll", update, true);
 
@@ -118,18 +171,19 @@
 
 <div>
     <button bind:this={button} onclick={() => pickerOpen = !pickerOpen} {title}>
+        {@render buttonContent?.()}
         {text}
     </button>
 
     {#if pickerOpen}
         <!-- <Portal target="body"> -->
             <dialog
-                use:anchor={{ to: button, top: "bottom", left: "left" }}
+                use:anchor={{ to: button, top: "bottom", left: "left", keepInViewport }}
                 use:clickOff={() => pickerOpen = false}
-                open
                 onclose={() => pickerOpen = false}
                 transition:fly={{ duration: 150, delay: 30, easing: easeInOutQuad, y: -15 }}
                 class="picker"
+                class:padding
             >
                 {@render children()}
             </dialog>
@@ -144,7 +198,10 @@ div {
 }
 dialog {
     border-radius: 5px;
-    padding: 0.75rem;
+    padding: 0;
+    &.padding {
+        padding: 0.75rem;
+    }
     margin: 0;
     border: 2px solid var(--surface-1-border);
     background-color: var(--surface-0);

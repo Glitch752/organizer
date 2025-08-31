@@ -7,17 +7,17 @@
         onchange: () => void
     } = $props();
 
-    const currentLocalTime = $derived(() => getPlainTime(value));
-    const currentHour = $derived(() => currentLocalTime().hour);
-    const currentMinute = $derived(() => currentLocalTime().minute);
-    const currentSecond = $derived(() => currentLocalTime().second);
+    const currentLocalTime = $derived(getPlainTime(value));
+    const currentHour = $derived(currentLocalTime.hour);
+    const currentMinute = $derived(currentLocalTime.minute);
+    const currentSecond = $derived(currentLocalTime.second);
 
     // svelte-ignore state_referenced_locally Intentional
-    let selectedHour = $state(currentHour());
+    let selectedHour = $state(currentHour);
     // svelte-ignore state_referenced_locally Intentional
-    let selectedMinute = $state(currentMinute());
+    let selectedMinute = $state(currentMinute);
     // svelte-ignore state_referenced_locally Intentional
-    let selectedSecond = $state(currentSecond());
+    let selectedSecond = $state(currentSecond);
     let editingField = $state<'hour' | 'minute' | 'second' | null>(null);
 
     function updateTime() {

@@ -3,7 +3,7 @@
     import DateInput from "../datetime/DateInput.svelte";
     import DateTimeInput from "../datetime/DateTimeInput.svelte";
     import TimeInput from "../datetime/TimeInput.svelte";
-    import RecurranceCondition from "./RecurranceCondition.svelte";
+    import RecurrenceCondition from "./RecurrenceCondition.svelte";
 
     let { time = $bindable(), onchange, onremove }: {
         time: EventTime,
@@ -31,13 +31,13 @@
             <TimeInput bind:value={time.end} {onchange} />
         </span>
         
-        Recurrance condition
-        <RecurranceCondition bind:condition={time.condition} {onchange} />
+        Recurrence condition
+        <RecurrenceCondition bind:condition={time.condition} {onchange} />
     {:else if time.type === TimeType.AllDay}
         <DateInput bind:value={time.date} {onchange} />
     {:else if time.type === TimeType.AllDayRecurring}
-        Recurrance condition
-        <RecurranceCondition bind:condition={time.condition} {onchange} />
+        Recurrence condition
+        <RecurrenceCondition bind:condition={time.condition} {onchange} />
     {/if}
 </div>
 

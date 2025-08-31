@@ -129,6 +129,16 @@ export function parseZonedTime(str: ZonedTimeString): { time: Temporal.PlainTime
     };
 }
 
+export function parseZonedTimeForDate(zdt: Temporal.ZonedDateTime, str: ZonedTimeString | PlainTimeString): Temporal.ZonedDateTime {
+    if(isPlainTime(str)) {
+        const time = parsePlainTime(str);
+        return zdt.withPlainTime(time);
+    } else {
+        const { time, zone } = parseZonedTime(str);
+        return zdt.withTimeZone(zone).withPlainTime(time).withTimeZone(zdt.timeZoneId);
+    }
+}
+
 export function parsePlainMonthDay(str: PlainMonthDayString): Temporal.PlainMonthDay {
     const match = /^PlainMonthDay\|(.+)$/.exec(str);
     if(!match) try {
@@ -230,9 +240,9 @@ export function currentPlainTimePlus(hours: number = 0): PlainTimeString {
     return makePlainTime(now);
 }
 
-export function currentDateTime(): ZonedDateTimeString {
+export function currentDateTimePlus(add: { hours: number } = { hours: 0 }): ZonedDateTimeString {
     const now = Temporal.Now.zonedDateTimeISO();
-    return makeZonedDateTime(now);
+    return makeZonedDateTime(now.add(add));
 }
 
 export function currentTime(): PlainTimeString {
@@ -262,13 +272,13 @@ export function getDayOfMonth(): number {
     return Temporal.Now.plainDateISO().day;
 }
 
-export function getWeekOfMonth(): number {
-    const today = Temporal.Now.plainDateISO();
-    const firstDayOfMonth = today.with({ day: 1 });
-    // 1=Monday, 7=Sunday
-    const firstDayOfWeek = firstDayOfMonth.dayOfWeek;
-    const offset = (firstDayOfWeek === 1) ? 0 : (8 - firstDayOfWeek);
-    return Math.floor((today.day + offset - 1) / 7) + 1;
+/**
+ * Gets the "week of the month" the date lands on.
+ * Note that this is based on 7-day spans relative to the start of the month, not calendar weeks.  
+ * This is because it's more intuitive to, say, always consider the first monday of the month to be in week 1, even if it's not the first day of the month.
+ */
+export function getWeekOfMonth(date: Temporal.PlainDate = Temporal.Now.plainDateISO()): number {
+    return Math.floor((date.day - 1) / 7) + 1;
 }
 
 export function getDayOfYear(): PlainMonthDayString {

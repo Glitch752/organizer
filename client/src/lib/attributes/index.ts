@@ -1,4 +1,4 @@
-import { currentDateTime, currentDayPlus, currentPlainTimePlus, getCurrentMonth, getDayOfMonth, getDayOfWeek, getDayOfYear, getWeekOfMonth, getWeekOfYear, getYear, type PlainDateString, type PlainMonthDayString, type PlainTimeString, type ZonedDateTimeString, type ZonedTimeString } from "../datetime/time";
+import { currentDateTimePlus, currentDayPlus, currentPlainTimePlus, getCurrentMonth, getDayOfMonth, getDayOfWeek, getDayOfYear, getWeekOfMonth, getWeekOfYear, getYear, type PlainDateString, type PlainMonthDayString, type PlainTimeString, type ZonedDateTimeString, type ZonedTimeString } from "../datetime/time";
 
 export enum AttributeType {
     CalendarEvent = "calendarEvent",
@@ -30,7 +30,7 @@ export const attributeTypes: {
         default: () => ({
             type: AttributeType.CalendarDeadline,
             enabled: true,
-            due: currentDateTime()
+            due: currentDateTimePlus()
         })
     }
 };
@@ -221,8 +221,8 @@ export const timeTypes: {
         description: "A one-time event with a specific start and end time.",
         default: () => ({
             type: TimeType.Single,
-            start: currentDateTime(),
-            end: currentDateTime()
+            start: currentDateTimePlus(),
+            end: currentDateTimePlus({ hours: 1 })
         })
     },
     [TimeType.Recurring]: {
@@ -278,12 +278,12 @@ export type EventTime = {
 
 export type Attribute = {
     type: AttributeType.CalendarEvent,
-    name?: string,
+    title?: string,
     enabled: boolean,
     times: EventTime[]
 } | {
     type: AttributeType.CalendarDeadline,
-    name?: string,
+    title?: string,
     enabled: boolean,
     due: ZonedDateTimeString
 };

@@ -14,7 +14,7 @@
     ];
 
     // Determine current selection
-    const currentSelection = $derived(() => {
+    const currentSelection = $derived.by(() => {
         if(isPlainTime(value)) {
             return timeZones[0]; // "Local"
         }
@@ -73,10 +73,10 @@
 
 <div class="timezone-picker">
     <button class="current-selection" onclick={() => collapsed = !collapsed}>
-        <span class="selected-zone">{currentSelection().id}</span>
-        <span class="selected-description">{currentSelection().description}</span>
-        {#if currentSelection().offset}
-            <span class="selected-offset">UTC{currentSelection().offset}</span>
+        <span class="selected-zone">{currentSelection.id}</span>
+        <span class="selected-description">{currentSelection.description}</span>
+        {#if currentSelection.offset}
+            <span class="selected-offset">UTC{currentSelection.offset}</span>
         {/if}
         <span class="collapse">{#if collapsed}▲{:else}▼{/if}</span>
     </button>
@@ -96,7 +96,7 @@
                 tz.id.toLowerCase().includes(search.toLowerCase()) ||
                 tz.description.toLowerCase().includes(search.toLowerCase())
             ) as timeZone}
-                {@const selected = currentSelection().id === timeZone.id && currentSelection().offset === timeZone.offset}
+                {@const selected = currentSelection.id === timeZone.id && currentSelection.offset === timeZone.offset}
                 <button 
                     class="timezone-option"
                     class:selected

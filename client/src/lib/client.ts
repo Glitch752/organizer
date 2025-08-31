@@ -48,6 +48,12 @@ export class Client {
         if(this.workspaceLoaded) cb();
         else this.workspaceLoadCallbacks.push(cb);
     }
+    public async waitForWorkspaceLoad() {
+        if(this.workspaceLoaded) return;
+        return new Promise<void>(resolve => {
+            this.onWorkspaceLoaded(() => resolve());
+        });
+    }
 
     private workspaceDocument = getDocument("global", () => {
         this.resubscribeMeta();
@@ -58,7 +64,7 @@ export class Client {
 
     public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages"));
 
-    private attributesMap = this.workspaceDocument.doc.getMap("attributes");
+    private attributesMap: YMap<YArray<Attribute>> = this.workspaceDocument.doc.getMap("attributes");
     
     public immutablePageTreeView = writable(this.pageTree.toJsonStructure());
 
@@ -82,10 +88,10 @@ export class Client {
         if(!this.workspaceLoaded) return null;
         
         if(!this.attributesMap.has(this.activePage.id)) {
-            this.attributesMap.set(this.activePage.id, new Y.Array());
+            this.attributesMap.set(this.activePage.id, new Y.Array<Attribute>() as YArray<Attribute>);
         }
 
-        return this.attributesMap.get(this.activePage?.id);
+        return this.attributesMap.get(this.activePage?.id)!;
     }
     /**
      * Returns the metadata map of the active page.
@@ -218,6 +224,41 @@ export class Client {
     private resubscribeMeta() {
         for(const { resubscribe } of this.metadataStores.values()) resubscribe();
     }
+
+    public getAllAttributes(): {
+        pageId: string,
+        attributes: Attribute[]
+    }[] {
+        if(!this.workspaceLoaded) return [];
+        const result: {
+            pageId: string,
+            attributes: Attribute[]
+        }[] = [];
+        this.attributesMap.forEach((attrs, pageId) => {
+            result.push({
+                pageId,
+                attributes: attrs.toArray()
+            });
+        });
+        return result;
+    }
+
+    public attributesFor(pageId: string): YArray<Attribute> | null {
+        if(!this.workspaceLoaded) return null;
+        if(!this.attributesMap.has(pageId)) {
+            this.attributesMap.set(pageId, new Y.Array<Attribute>() as YArray<Attribute>);
+        }
+        return this.attributesMap.get(pageId)!;
+    }
+    public async listenToAttributeChanges(f: () => void): Promise<() => void> {
+        if(!this.workspaceLoaded) await this.waitForWorkspaceLoad();
+        
+        const observer = () => f();
+        this.attributesMap.observeDeep(observer);
+        return () => {
+            this.attributesMap.unobserveDeep(observer);
+        };
+    };
 
     private widgetHeightCache = new LimitedMap<number>(JSON.parse(localStorage.getItem("widgetHeightCache") ?? "{}"));
     debouncedWidgetHeightCacheFlush = debounce(() => {

@@ -8,7 +8,7 @@
     } = $props();
 
     // Parse the current date value and convert to local timezone
-    const plainDate = $derived(() => getPlainDate(value));
+    const plainDate = $derived(getPlainDate(value));
 
     function selectDate(year: number, month: number, day: number) {
         value = updateDateString(value, year, month, day);
@@ -16,4 +16,4 @@
     }
 </script>
 
-<InnerDatePicker date={plainDate()} {selectDate}></InnerDatePicker>
+<InnerDatePicker date={plainDate} {selectDate}></InnerDatePicker>
