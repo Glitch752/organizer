@@ -102,6 +102,7 @@
 	.content-aligned {
 		display: flex;
 		flex-direction: row;
+		gap: 0.5rem;
 		
 		// Yay for magic numbers
 		&.onPage {

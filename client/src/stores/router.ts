@@ -4,6 +4,7 @@ import Page from "../pages/Page.svelte";
 
 import PageHeader from "../pages/PageHeader.svelte";
 import PageNav from "../pages/PageNav.svelte";
+import CalendarHeader from "../pages/CalendarHeader.svelte";
 
 import type { Component } from 'svelte';
 import { writable, type Subscriber, type Unsubscriber } from 'svelte/store';
@@ -115,7 +116,7 @@ export const route = new Router([
     },
     {
         matcher: /^\/calendar$/,
-        components: { page: Calendar, nav: CalendarNav },
+        components: { page: Calendar, header: CalendarHeader, nav: CalendarNav },
         name: "calendar"
     },
     {

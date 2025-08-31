@@ -1,5 +1,5 @@
 <script lang="ts">
-    import DatePicker from "./DatePicker.svelte";
+    import CalendarDatePicker from "./calendarDatePicker/CalendarDatePicker.svelte";
     import TimePicker from "./TimePicker.svelte";
     import { parseFuzzyDateTime } from "./fuzzyDate";
     import { makeZonedDateTime, parseZonedDateTime, type ZonedDateTimeString } from "./time";
@@ -50,7 +50,7 @@
     </svelte:boundary>
     <hr />
     <div class="content">
-        <DatePicker bind:value onchange={() => { onchange(); }} />
+        <CalendarDatePicker bind:value onchange={() => { onchange(); }} />
         <hr class="column-separator" />
         <div class="column">
             <TimePicker bind:value onchange={() => { onchange(); }} />

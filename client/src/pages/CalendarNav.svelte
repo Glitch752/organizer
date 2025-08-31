@@ -1,17 +1,37 @@
 <script lang="ts">
     import { Temporal } from "@js-temporal/polyfill";
-    import DatePicker from "../lib/datetime/DatePicker.svelte";
-    import { makePlainDate, type PlainDateString } from "../lib/datetime/time";
+    import InnerDatePicker from "../lib/datetime/calendarDatePicker/InnerDatePicker.svelte";
+    import { calendarDisplay } from "../stores/calendar";
 
-    let day: PlainDateString = $state(makePlainDate(Temporal.Now.plainDateISO()));
+    let date = $state(Temporal.PlainDate.from($calendarDisplay.selectedDay));
+    $effect(() => {
+        calendarDisplay.update(display => ({
+            ...display,
+            selectedDay: {
+                year: date.year,
+                month: date.month,
+                day: date.day
+            }
+        }));
+    });
+    calendarDisplay.subscribe(display => {
+        const newDate = Temporal.PlainDate.from(display.selectedDay);
+        if(Temporal.PlainDate.compare(newDate, date) !== 0) {
+            date = newDate;
+        }
+    });
 
     function goToToday() {
-        day = makePlainDate(Temporal.Now.plainDateISO());
+        date = Temporal.Now.plainDateISO();
+    }
+
+    function selectDate(year: number, month: number, day: number) {
+        date = Temporal.PlainDate.from({ year, month, day });
     }
 </script>
 
 <div class="content">
-    <DatePicker bind:value={day} />
+    <InnerDatePicker {date} {selectDate} />
     <button onclick={goToToday} class="today-button blue">Today</button>
 </div>
 

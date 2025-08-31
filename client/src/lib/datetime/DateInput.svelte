@@ -1,5 +1,5 @@
 <script lang="ts">
-    import DatePicker from "./DatePicker.svelte";
+    import CalendarDatePicker from "./calendarDatePicker/CalendarDatePicker.svelte";
     import { parseFuzzyDate } from "./fuzzyDate";
     import { makePlainDate, parsePlainDate, type PlainDateString } from "./time";
     import PopupButton from "../PopupButton.svelte";
@@ -43,7 +43,7 @@
     </svelte:boundary>
     <hr />
     <div class="content">
-        <DatePicker bind:value onchange={() => { onchange(); }} />
+        <CalendarDatePicker bind:value onchange={() => { onchange(); }} />
     </div>
 </PopupButton>
 
