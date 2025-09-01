@@ -147,6 +147,12 @@ importers:
       '@types/node':
         specifier: ^24.3.0
         version: 24.3.0
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
+      esbuild:
+        specifier: ^0.25.9
+        version: 0.25.9
       tsx:
         specifier: ^4.20.4
         version: 4.20.5
@@ -155,10 +161,6 @@ importers:
         version: 5.9.2
 
   shared:
-    dependencies:
-      yjs:
-        specifier: ^13.6.27
-        version: 13.6.27
     devDependencies:
       '@types/node':
         specifier: ^24.3.0
@@ -166,6 +168,9 @@ importers:
       typescript:
         specifier: ^5.9.2
         version: 5.9.2
+      yjs:
+        specifier: ^13.6.27
+        version: 13.6.27
 
 packages:
 
@@ -692,6 +697,9 @@ packages:
 
   '@types/node@24.3.0':
     resolution: {integrity: sha512-aPTXCrfwnDLj4VvXrm+UUCQjNEvJgNA8s5F1cvwQU+3KNltTOkBm1j30uNLyqqPNe7gE3KFzImYoZEfLhp4Yow==}
+
+  '@types/ws@8.18.1':
+    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
   abbrev@1.1.1:
     resolution: {integrity: sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==}
@@ -1976,6 +1984,10 @@ snapshots:
   '@types/node@24.3.0':
     dependencies:
       undici-types: 7.10.0
+
+  '@types/ws@8.18.1':
+    dependencies:
+      '@types/node': 24.3.0
 
   abbrev@1.1.1:
     optional: true

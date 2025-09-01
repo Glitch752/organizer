@@ -35,6 +35,7 @@ If others begin using this application and are interested in implementing these 
 - [ ] Import/export
 - [ ] Command palette
 - [ ] Full search
+- [ ] Offline support with a service worker
 
 ## Inspiration
 - [Silverbullet](https://github.com/silverbulletmd/silverbullet). I love Silverbullet's flexibility and visual editor, but I've had issues with syncronization and would like to build something more tailored for my needs.

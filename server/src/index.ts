@@ -9,6 +9,10 @@ import { YMap } from "@shared/yjsFixes";
 
 import { sqlite } from "./SQLite";
 import { checkAuth, addAuthRoutes } from "./auth";
+import { serveStatic } from "hono/serve-static";
+
+import path from "path";
+import fs from "fs/promises";
 
 const hocuspocus = new Hocuspocus({
     yDocOptions: {
@@ -87,12 +91,28 @@ const socketHandler = upgradeWebSocket((c) => ({
                 cookie: c.req.header("cookie") || ""
             }
         };
-        hocuspocus.handleConnection(ws.raw, req as any);
+        hocuspocus.handleConnection(ws.raw!, req as any);
     }
 }));
 
 app.get("ws", socketHandler);
-app.notFound((c => c.text(`Hocuspocus: ${c.req.method} ${c.req.path} not found`, 404)));
+
+// All other paths host the SPA
+app.get('*', serveStatic({
+    root: "../static",
+    async getContent(route, c) {
+        // Try to serve the requested file, fallback to index.html for SPA routing
+        try {
+            const filePath = path.join(__dirname, "../static", route);
+            const file = await fs.readFile(filePath);
+            return new Response(file);
+        } catch (e) {
+            const indexPath = path.join(__dirname, "../static/index.html");
+            const indexFile = await fs.readFile(indexPath);
+            return new Response(indexFile);
+        }
+    }
+}));
 
 addAuthRoutes(app);
 
