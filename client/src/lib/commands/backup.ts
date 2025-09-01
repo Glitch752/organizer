@@ -1,10 +1,9 @@
 import type { Client, PageMeta } from "../client";
 import JSZip from "jszip";
-import { type YTreeNode } from "../ytree";
+import { type YTreeNode } from "../../../../shared/ytree";
 import { type DocSubscription, getDocument } from "../../stores/sync";
 
 async function addPages(zip: JSZip, node: YTreeNode<PageMeta>, client: Client) {
-    // TODO: add node itself
     const doc = await new Promise<DocSubscription>((resolve) => {
         const val = getDocument(`doc:${node.id()}`, () => {
             resolve(val);

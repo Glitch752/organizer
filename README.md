@@ -26,15 +26,10 @@ If others begin using this application and are interested in implementing these 
 
 ## TODO
 - [ ] Mobile responsiveness
-- [ ] Authentication
 - [ ] Calendar functionality
-  - [ ] Day, week, month, and year views
-  - [ ] Event visualization
-  - [ ] Deadline visualization
   - [ ] Server-side CalDAV integration?
 - [ ] Better page links
   - [ ] Backlinks
-- [ ] Better server WS connection
 - [ ] Plugin system
 - [ ] Multi-workspace functionality
 - [ ] Import/export

@@ -4,10 +4,12 @@ import { LimitedMap } from "./util/LimitedMap";
 import { debounce } from "./util/time";
 import type { EditorView } from "codemirror";
 import { SelectionCRDT } from "./selection";
-import { YTree, type TreeJsonStructure } from "./ytree";
+import { YTree, type TreeJsonStructure } from "../../../shared/ytree";
 import { writable, type Writable } from "svelte/store";
-import type { YArray, YMap } from "./yjsFixes";
+import type { YArray, YMap } from "../../../shared/yjsFixes";
 import type { Attribute } from "./attributes";
+import { v4 as uuidv4 } from "uuid";
+import { route } from "../stores/router";
 
 type UserColor = {
     color: string,
@@ -219,6 +221,20 @@ export class Client {
         this.resubscribeMeta();
         
         return this.activePage;
+    }
+
+    public createPage(parentId: string | null = null) {
+        if(!this.workspaceLoaded) throw new Error("Workspace not loaded");
+
+        const id = uuidv4();
+        const parentNode = parentId ? this.pageTree.getNode(parentId) : this.pageTree.root();
+        if(!parentNode) throw new Error("Parent node not found");
+
+        const node = parentNode.addChild(id, {
+            name: "Untitled"
+        });
+
+        route.navigate(`/page/${id}`);
     }
 
     private resubscribeMeta() {

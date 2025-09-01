@@ -187,7 +187,6 @@ function getEventTimeObjects(
             // Check if this is the end day of a multi-day recurring event from the previous day
             const previousDay = date.subtract({ days: 1 });
             if(checkRecurrence(time.condition, previousDay)) {
-                console.log(previousDay.toString(), "matches");
                 const zdt = Temporal.Now.zonedDateTimeISO().with({
                     year: previousDay.year,
                     month: previousDay.month,

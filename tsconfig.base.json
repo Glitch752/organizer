@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "composite": true,
+        "target": "ES2022",
+        "useDefineForClassFields": true,
+        "resolveJsonModule": true,
+
+        "allowJs": true,
+        "checkJs": true,
+        "isolatedModules": true,
+        "moduleDetection": "force"
+    }
+}

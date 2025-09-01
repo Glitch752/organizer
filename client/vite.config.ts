@@ -12,6 +12,14 @@ export default defineConfig({
                 target: 'ws://localhost:3000',
                 ws: true,
                 changeOrigin: true
+            },
+            '/login': {
+                target: 'http://localhost:3000',
+                changeOrigin: true
+            },
+            '/logout': {
+                target: 'http://localhost:3000',
+                changeOrigin: true
             }
         }
     }

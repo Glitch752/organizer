@@ -1,6 +1,7 @@
 import Home from "../pages/Home.svelte";
 import Calendar from "../pages/Calendar.svelte";
 import Page from "../pages/Page.svelte";
+import Auth from "../pages/Auth.svelte";
 
 import PageHeader from "../pages/PageHeader.svelte";
 import PageNav from "../pages/PageNav.svelte";
@@ -14,7 +15,11 @@ type ComponentSet = {
     page: Component;
     nav: Component;
     header?: Component;
-}
+    pageOnly?: boolean;
+} | {
+    page: Component;
+    pageOnly: true;
+};
 
 type RouterPathConstants = readonly {
     matcher: RegExp;
@@ -64,6 +69,8 @@ class Router<Paths extends RouterPathConstants> {
     private get defaultPage() {
         return this.paths.find(p => p.name === this.defaultPageName)!;
     }
+
+    public current: RouteData<Paths>;
     
     constructor(private paths: Paths) {
         // Find the path responsible for "/"
@@ -73,12 +80,15 @@ class Router<Paths extends RouterPathConstants> {
         }
         this.defaultPageName = defaultPath.name;
 
-        const { subscribe, set } = writable(this.getPathData(window.location.pathname));
+        this.set = () => {};
+        const initial = this.current = this.getPathData(window.location.pathname);
+        const { subscribe, set } = writable(initial);
         this.subscribe = subscribe;
         this.set = set;
 
         subscribe((data) => {
             console.log("Navigated to", data.pathname);
+            this.current = data;
         });
 
         window.addEventListener('popstate', () => {
@@ -136,6 +146,11 @@ export const route = new Router([
         matcher: /^\/$/,
         components: { page: Home, nav: PageNav },
         name: "home"
+    },
+    {
+        matcher: /^\/auth$/,
+        components: { page: Auth, pageOnly: true },
+        name: "auth"
     },
     {
         matcher: /^\/calendar$/,
