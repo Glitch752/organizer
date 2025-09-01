@@ -33,7 +33,7 @@ export type EditorInfo = {
     editorView: EditorView | null
 };
 
-type PageMeta = {
+export type PageMeta = {
     name: string
 };
 export type PageType = TreeJsonStructure<PageMeta>;

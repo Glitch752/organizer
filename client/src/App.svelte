@@ -1,8 +1,9 @@
 <script lang="ts">
 	import Header from "./lib/Header.svelte";
 	import Nav from "./lib/Nav.svelte";
-  	import { persistentState } from "./stores/persistent";
-  	import { route } from "./stores/router";
+	import { persistentState } from "./stores/persistent";
+	import { route } from "./stores/router";
+	import CommandPalette from "./lib/commands/CommandPalette.svelte";
 
 	let navOpen = persistentState<boolean>("navOpen", true);
 
@@ -20,6 +21,7 @@
 <div class="app" class:navOpen={$navOpen}>
 	<Header bind:navOpen={$navOpen} />
 	<Nav />
+	<CommandPalette />
 
 	<main>
 		<!-- svelte-ignore svelte_component_deprecated - <Component/> isn't reactive with a writable for some reason? -->

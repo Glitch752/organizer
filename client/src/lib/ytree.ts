@@ -5,7 +5,7 @@ import type { YMap } from "./yjsFixes";
 // Adapted from y-sweet examples:
 // https://github.com/jamsocket/y-sweet/blob/main/examples/nextjs/src/app/(demos)/tree-crdt/ytree.ts
 
-const ROOT_ID = "__root";
+export const ROOT_ID = "__root";
 const PARENT_KEY = "parent";
 
 type NodeRelations = { parent: string | null; children: Set<string> };
@@ -85,6 +85,15 @@ export class YTree<T extends object> {
         if(!id) return null;
         if(!this.structure.has(id)) return null;
         return new YTreeNode(id, this);
+    }
+
+    /**
+     * Get all nodes in the tree.
+     */
+    public getAllNodes(): YTreeNode<T>[] {
+        return Array.from(this.structure.keys())
+            .filter(id => id !== ROOT_ID)
+            .map(id => this.getNode(id)) as YTreeNode<T>[];
     }
 
     /**
