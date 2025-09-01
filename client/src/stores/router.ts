@@ -77,6 +77,10 @@ class Router<Paths extends RouterPathConstants> {
         this.subscribe = subscribe;
         this.set = set;
 
+        subscribe((data) => {
+            console.log("Navigated to", data.pathname);
+        });
+
         window.addEventListener('popstate', () => {
             set(this.getPathData(window.location.pathname));
         });
@@ -105,7 +109,6 @@ class Router<Paths extends RouterPathConstants> {
     public navigate(path: string): void {
         this.set(this.getPathData(path));
         history.pushState({}, '', path);
-        console.log("Navigated to", path);
     }
 }
 

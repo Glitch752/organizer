@@ -43,3 +43,7 @@ If others begin using this application and are interested in implementing these 
 
 ## Inspiration
 - [Silverbullet](https://github.com/silverbulletmd/silverbullet). I love Silverbullet's flexibility and visual editor, but I've had issues with syncronization and would like to build something more tailored for my needs.
+
+## Attribution
+
+Icons used in this project are provided by [Humble Icons](https://humbleicons.com/).

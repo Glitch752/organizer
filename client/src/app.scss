@@ -159,6 +159,36 @@ input[type="text"] {
 	}
 }
 
+input[type="color"] {
+	width: 2em;
+	height: 2em;
+	border-radius: 5px;
+	border: 2px solid var(--surface-1-border);
+	background-color: var(--surface-1);
+	padding: 0;
+	outline: none;
+	cursor: pointer;
+
+	&:focus-visible {
+		border-color: var(--blue-text);
+	}
+
+	&::-webkit-color-swatch-wrapper {
+		padding: 0;
+		border-radius: 5px;
+	}
+
+	&::-webkit-color-swatch {
+		border-radius: 5px;
+		border: none;
+	}
+
+	&::-moz-color-swatch {
+		border-radius: 5px;
+		border: none;
+	}
+}
+
 select {
 	background-color: var(--surface-1);
 	border-radius: 5px;

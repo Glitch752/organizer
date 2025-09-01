@@ -1,6 +1,7 @@
 <script lang="ts">
     import { conditionTypes, EventConditionType, type EventCondition } from ".";
     import DateInput from "../datetime/DateInput.svelte";
+    import DateListInput from "../datetime/DateListInput.svelte";
     import DayOfYearListInput from "../datetime/DayOfYearListInput.svelte";
     import MonthInput from "../datetime/MonthInput.svelte";
     import WeekdayInput from "../datetime/WeekdayInput.svelte";
@@ -36,15 +37,15 @@
         &nbsp;is in&nbsp;
         <WeekdayInput bind:days={condition.days} {onchange} />
     {:else if condition.type === EventConditionType.Date}
-        &nbsp;is&nbsp;
-        <DateInput bind:value={condition.date} {onchange} />
+        &nbsp;is in&nbsp;
+        <DateListInput bind:dates={condition.dates} {onchange} />
     {:else if condition.type === EventConditionType.DateRange}
         &nbsp;is between&nbsp;
         <DateInput bind:value={condition.start} {onchange} />
         and&nbsp;
         <DateInput bind:value={condition.end} {onchange} />
     {:else if condition.type === EventConditionType.DayOfYear}
-        &nbsp;is on&nbsp;
+        &nbsp;is in&nbsp;
         <DayOfYearListInput bind:days={condition.days} {onchange} />
     {:else if condition.type === EventConditionType.WeekOfMonth}
         &nbsp;is in week&nbsp;
@@ -69,6 +70,8 @@
         <div class="nested">
             <RecurrenceConditionList bind:conditions={condition.conditions} {onchange} lastSeparator="or" />
         </div>
+    {:else if condition.type === EventConditionType.True || condition.type === EventConditionType.False}
+        <!-- No additional input needed -->
     {:else}
         <!-- Unknown condition type -->
         Unknown condition type: {condition.type}

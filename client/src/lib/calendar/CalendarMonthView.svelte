@@ -2,6 +2,10 @@
     import type { CalendarDisplay } from "../../stores/calendar";
     import { Temporal } from "@js-temporal/polyfill";
     import { getCalendarDays } from "../datetime/months";
+    import { getCalendarObjects } from "./calendar";
+    import { client } from "../client";
+    import CalendarMonthObject from "./CalendarMonthObject.svelte";
+  import { measurePromise } from "../util/time";
 
     let {
         display = $bindable()
@@ -17,8 +21,33 @@
     const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const shortWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    // Get calendar days for the current month
-    const calendarDays = $derived(getCalendarDays(display.selectedDay.year, display.selectedDay.month));
+    async function getDays(selectedDay: { year: number; month: number; day: number; }) {
+        const days = getCalendarDays(selectedDay.year, selectedDay.month);
+        return measurePromise(Promise.all(days.map(async d => ({
+            month: d.month,
+            day: d.day,
+            objects: await getCalendarObjects(client, Temporal.PlainDate.from({
+                year: d.year,
+                month: d.month,
+                day: d.day
+            }))
+        }))), "Day computation");
+    }
+
+    let calendarDays = $derived(getDays(display.selectedDay));
+
+    $effect(() => {
+        let unsub: (() => void) | undefined;
+        client.listenToAttributeChanges(() => {
+            calendarDays = getDays(display.selectedDay);
+        }).then(u => {
+            unsub = u;
+        });
+
+        return () => {
+            unsub?.();
+        };
+    });
 
     // The current date for highlighting
     const today = $derived.by(() => {
@@ -39,13 +68,6 @@
             }
         }
     }
-
-    const firstCurrentMonthDayIndex = $derived(
-        calendarDays.findIndex(day => day.month === display.selectedDay.month && day.day === 1)
-    );
-    const firstNextMonthDayIndex = $derived(
-        calendarDays.findIndex(day => day.month !== display.selectedDay.month && day.day === 1)
-    );
 </script>
 
 <div class="calendar-grid">
@@ -56,26 +78,37 @@
     </div>
 
     <div class="days-grid">
-        {#each calendarDays as day, index}
-            <div 
-                class="day"
-                class:in-month={day.month === display.selectedDay.month}
-                class:active={display.selectedDay.year === display.selectedDay.year && 
-                                display.selectedDay.month === day.month && 
-                                display.selectedDay.day === day.day}
-                class:today={today.year === display.selectedDay.year && 
-                            today.month === day.month && 
-                            today.day === day.day}
-            >
-                <button
-                    class="day-number"
-                    onclick={() => selectDay(day.month, day.day)}
+        {#await calendarDays then days}
+            {@const firstCurrentMonthDayIndex =
+                days.findIndex(day => day.month === display.selectedDay.month && day.day === 1)}
+            {@const firstNextMonthDayIndex =
+                days.findIndex(day => day.month !== display.selectedDay.month && day.day === 1)}
+            
+            {#each days as day, index}
+                <div 
+                    class="day"
+                    class:in-month={day.month === display.selectedDay.month}
+                    class:active={display.selectedDay.year === display.selectedDay.year && 
+                                    display.selectedDay.month === day.month && 
+                                    display.selectedDay.day === day.day}
+                    class:today={today.year === display.selectedDay.year && 
+                                today.month === day.month && 
+                                today.day === day.day}
                 >
-                    {index === firstCurrentMonthDayIndex || index === firstNextMonthDayIndex ? shortMonthNames[day.month] : ""}
-                    {day.day}
-                </button>
-            </div>
-        {/each}
+                    <button
+                        class="day-number"
+                        onclick={() => selectDay(day.month, day.day)}
+                    >
+                        {index === firstCurrentMonthDayIndex || index === firstNextMonthDayIndex ? shortMonthNames[day.month - 1] : ""}
+                        {day.day}
+                    </button>
+
+                    {#each day.objects as object}
+                        <CalendarMonthObject {object} {client} />
+                    {/each}
+                </div>
+            {/each}
+        {/await}
     </div>
 </div>
 
@@ -109,14 +142,17 @@
     .days-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
+        grid-auto-rows: minmax(80px, auto);
         gap: 1px;
         flex: 1;
     }
 
     .day {
         display: flex;
-        align-items: flex-start;
-        justify-content: center;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        
         background-color: transparent;
         color: var(--subtle-text);
         border: 1px solid transparent;
@@ -126,6 +162,8 @@
         }
         &:not(:nth-child(7n+1)) {
             border-left: 1px solid var(--surface-1);
+            // Center contents
+            padding-left: 2px;
         }
 
         &.in-month {

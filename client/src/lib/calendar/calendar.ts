@@ -2,6 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import type { Client } from "../client";
 import { AttributeType, EventConditionType, TimeType, type EventCondition, type EventTime } from "../attributes";
 import { getWeekOfMonth, parsePlainDate, parsePlainMonthDay, parseZonedDateTime, parseZonedTimeForDate } from "../datetime/time";
+import type { HexString } from "../attributes/color";
 
 export type CalendarObject = ({
     type: "deadline";
@@ -22,6 +23,7 @@ export type CalendarObject = ({
 }) & {
     pageId: string;
     attributeIndex: number;
+    color?: HexString;
 };
 
 function undefEmpty(str: string | undefined): string | undefined {
@@ -29,7 +31,11 @@ function undefEmpty(str: string | undefined): string | undefined {
     return str;
 }
 
-export async function getCalendarObjects(client: Client, date: Temporal.PlainDate): Promise<CalendarObject[]> {
+export async function getCalendarObjects(
+    client: Client,
+    date: Temporal.PlainDate,
+    weekView: boolean = false
+): Promise<CalendarObject[]> {
     if(!client.workspaceLoaded) await client.waitForWorkspaceLoad();
 
     // TODO: This is so so so inefficient and terrible lol
@@ -49,11 +55,13 @@ export async function getCalendarObjects(client: Client, date: Temporal.PlainDat
                         time: zdt.toPlainTime(),
                         pageId,
                         attributeIndex,
+                        color: attr.color,
                         title: undefEmpty(attr.title) ?? client.pageTree.getNode(pageId)?.get("name") ?? "No title"
                     });
                 }
             } else if(attr.type === AttributeType.CalendarEvent) {
                 if(!attr.enabled) continue;
+                if(!weekView && attr.weekViewOnly) continue;
                 
                 for(const time of attr.times) {
                     objects.push(...getEventTimeObjects(
@@ -61,6 +69,7 @@ export async function getCalendarObjects(client: Client, date: Temporal.PlainDat
                         date,
                         pageId,
                         attributeIndex,
+                        attr.color,
                         undefEmpty(attr.title) ?? client.pageTree.getNode(pageId)?.get("name") ?? "No title"
                     ));
                 }
@@ -68,7 +77,17 @@ export async function getCalendarObjects(client: Client, date: Temporal.PlainDat
         }
     }
 
-    return objects;
+    return objects.sort((a, b) => {
+        // All-day events first
+        if(a.type === "allDayEvent" && b.type !== "allDayEvent") return -1;
+        if(b.type === "allDayEvent" && a.type !== "allDayEvent") return 1;
+        if(a.type === "allDayEvent" || b.type === "allDayEvent") return 0;
+        
+        // Deadlines and events by start time
+        const aTime = a.type === "deadline" ? a.time : a.start ?? Temporal.PlainTime.from("00:00");
+        const bTime = b.type === "deadline" ? b.time : b.start ?? Temporal.PlainTime.from("00:00");
+        return Temporal.PlainTime.compare(aTime, bTime);
+    });
 }
 
 function getEventTimeObjects(
@@ -76,6 +95,7 @@ function getEventTimeObjects(
     date: Temporal.PlainDate,
     pageId: string,
     attributeIndex: number,
+    color: HexString | undefined,
     title: string
 ): CalendarObject[] {
     switch(time.type) {
@@ -105,7 +125,8 @@ function getEventTimeObjects(
                         start: startTime,
                         end: endTime,
                         startDay: startPlain,
-                        endDay: endPlain
+                        endDay: endPlain,
+                        color
                     }
                 ];
             }
@@ -119,7 +140,8 @@ function getEventTimeObjects(
                         type: "allDayEvent",
                         pageId,
                         attributeIndex,
-                        title
+                        title,
+                        color
                     }
                 ];
             }
@@ -132,28 +154,63 @@ function getEventTimeObjects(
                         type: "allDayEvent",
                         pageId,
                         attributeIndex,
-                        title
+                        title,
+                        color
                     }
                 ];
             }
             break;
         }
         case TimeType.Recurring: {
+            let events: CalendarObject[] = [];
             if(checkRecurrence(time.condition, date)) {
                 const zdt = Temporal.Now.zonedDateTimeISO().with({ year: date.year, month: date.month, day: date.day });
-                return [
-                    {
+                const startTime = parseZonedTimeForDate(zdt, time.start).toPlainTime();
+                const endTime = parseZonedTimeForDate(zdt, time.end).toPlainTime();
+                const multiDay = Temporal.PlainTime.compare(endTime, startTime) < 0;
+                
+                events.push({
+                    type: "event",
+                    pageId,
+                    attributeIndex,
+                    title,
+                    start: startTime,
+                    // If the end is before the start time, this event spans across days
+                    // so it doesn't end on this day
+                    end: multiDay ? undefined : endTime,
+                    startDay: date,
+                    endDay: multiDay ? date.add({ days: 1 }) : date,
+                    color
+                });
+            }
+            
+            // Check if this is the end day of a multi-day recurring event from the previous day
+            const previousDay = date.subtract({ days: 1 });
+            if(checkRecurrence(time.condition, previousDay)) {
+                console.log(previousDay.toString(), "matches");
+                const zdt = Temporal.Now.zonedDateTimeISO().with({
+                    year: previousDay.year,
+                    month: previousDay.month,
+                    day: previousDay.day
+                });
+                const startTime = parseZonedTimeForDate(zdt, time.start).toPlainTime();
+                const endTime = parseZonedTimeForDate(zdt, time.end).toPlainTime();
+                
+                if(Temporal.PlainTime.compare(endTime, startTime) < 0) {
+                    events.push({
                         type: "event",
                         pageId,
                         attributeIndex,
                         title,
-                        start: parseZonedTimeForDate(zdt, time.start).toPlainTime(),
-                        end: parseZonedTimeForDate(zdt, time.end).toPlainTime(),
-                        startDay: date,
-                        endDay: date
-                    }
-                ];
+                        end: endTime,
+                        startDay: previousDay,
+                        endDay: date,
+                        color
+                    });
+                }
             }
+
+            return events;
         }
     }
 
@@ -168,9 +225,13 @@ function checkRecurrence(condition: EventCondition, date: Temporal.PlainDate): b
             return condition.conditions.every(c => checkRecurrence(c, date));
         case EventConditionType.Or:
             return condition.conditions.some(c => checkRecurrence(c, date));
+        case EventConditionType.True:
+            return true;
+        case EventConditionType.False:
+            return false;
         
         case EventConditionType.Date:
-            return Temporal.PlainDate.compare(parsePlainDate(condition.date), date) === 0;
+            return condition.dates.map(parsePlainDate).some(d => Temporal.PlainDate.compare(d, date) === 0);
         case EventConditionType.DateRange: {
             const start = parsePlainDate(condition.start);
             const end = parsePlainDate(condition.end);

@@ -17,7 +17,7 @@ export function getFirstDayOfMonth(year: number, month: number): number {
 function getCalendarDaysInner(year: number, month: number) {
     const daysInMonth = getDaysInMonth(year, month);
     const firstDay = getFirstDayOfMonth(year, month);
-    const days: { day: number; month: number }[] = [];
+    const days: { day: number; month: number; year: number }[] = [];
 
     // Days from previous month
     const prevMonth = month === 1 ? 12 : month - 1;
@@ -25,19 +25,20 @@ function getCalendarDaysInner(year: number, month: number) {
     const daysInPrevMonth = getDaysInMonth(prevYear, prevMonth);
     
     const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
     
     // Days in previous month
     for(let i = firstDay - 1; i >= 0; i--) {
-        days.push({ day: daysInPrevMonth - i, month: prevMonth });
+        days.push({ day: daysInPrevMonth - i, month: prevMonth, year: prevYear });
     }
 
     for(let i = 1; i <= daysInMonth; i++) {
-        days.push({ day: i, month: month });
+        days.push({ day: i, month: month, year: year });
     }
 
     // Remaining days from next month
-    while(days.length < 7 * 6) {
-        days.push({ day: days.length - daysInMonth - firstDay + 1, month: nextMonth });
+    while(days.length % 7 !== 0) {
+        days.push({ day: days.length - daysInMonth - firstDay + 1, month: nextMonth, year: nextYear });
     }
 
     return days;

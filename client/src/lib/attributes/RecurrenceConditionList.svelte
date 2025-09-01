@@ -1,6 +1,5 @@
 <script lang="ts">
     import { EventConditionType, type EventCondition } from ".";
-    import { currentDayPlus } from "../datetime/time";
     import RecurrenceCondition from "./RecurrenceCondition.svelte";
 
     let { conditions = $bindable(), lastSeparator, onchange }: {
@@ -27,7 +26,7 @@
 
 <div>
     <button onclick={() => {
-        conditions.push({ type: EventConditionType.Date, date: currentDayPlus() });
+        conditions.push({ type: EventConditionType.True });
         onchange();
-    }} title="Add condition">+</button>
+    }} title="Add condition" class="blue">+ Add condition</button>
 </div>

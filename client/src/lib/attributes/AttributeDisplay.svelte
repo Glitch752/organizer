@@ -42,7 +42,18 @@
             <span>Enabled</span> <input type="checkbox" bind:checked={data.enabled} {onchange} />
         </label>
         <label>
+            <span>Week view only</span> <input type="checkbox" bind:checked={data.weekViewOnly} {onchange} />
+        </label>
+        <label>
             <span>Title</span> <input type="text" bind:value={data.title} {onchange} placeholder="Leave blank to use page title" />
+        </label>
+        <label>
+            <!-- TODO: Custom color picker -->
+            <span>Color</span> <input type="color" bind:value={data.color} {onchange} />
+            <button title="Reset to default color" onclick={() => {
+                data.color = undefined;
+                onchange();
+            }} aria-label="Reset to default color">Reset</button>
         </label>
         <CalendarEventTimes bind:times={data.times} {onchange} />
         {:else if data.type === AttributeType.CalendarDeadline}
@@ -51,6 +62,13 @@
         </label>
         <label>
             <span>Title</span> <input type="text" bind:value={data.title} {onchange} placeholder="Leave blank to use page title" />
+        </label>
+        <label>
+            <span>Color</span> <input type="color" bind:value={data.color} {onchange} />
+            <button title="Reset to default color" onclick={() => {
+                data.color = undefined;
+                onchange();
+            }} aria-label="Reset to default color">Reset</button>
         </label>
         <label>
             <span>Due</span> <DateTimeInput bind:value={data.due} {onchange} />
@@ -128,7 +146,7 @@ label {
 
     /* Make text a consistent width */
     > span {
-        width: 4rem;
+        min-width: 4rem;
     }
 
     input[type=text] {

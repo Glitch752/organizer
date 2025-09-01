@@ -12,7 +12,8 @@
     function formatDay(value: PlainMonthDayString) {
         return parsePlainMonthDay(value).toLocaleString(undefined, {
             month: "short",
-            day: "numeric"
+            day: "numeric",
+            calendar: "iso8601"
         });
     }
 

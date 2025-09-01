@@ -5,6 +5,7 @@ export type CalendarDisplay = {
     displayType: "year" | "month" | "week",
     selectedDay: {
         year: number;
+        /** 1-based like in Temporal */
         month: number;
         day: number;
     }

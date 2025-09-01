@@ -29,6 +29,7 @@
 </script>
 
 <PopupButton text={formatDatetime(value)} title={value}>
+    <!-- TODO: Allow using enter to set interpreted value and make component for interpret boxes -->
     <div class="interpret">
         <input type="text" bind:value={interpretInputDate} />
         <button onclick={() => {

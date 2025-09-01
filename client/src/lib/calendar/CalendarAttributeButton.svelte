@@ -52,6 +52,7 @@
 <style lang="scss">
     .attribute-preview {
         min-width: 32rem;
+        
         color: var(--color-text);
 
         .source {

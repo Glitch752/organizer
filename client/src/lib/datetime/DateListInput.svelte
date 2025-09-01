@@ -1,28 +1,28 @@
 <script lang="ts">
     import { Temporal } from "@js-temporal/polyfill";
-    import type { PlainMonthDayString } from "./time";
-    import { makePlainMonthDay } from "./time";
-    import DayOfYearInput from "./DayOfYearInput.svelte";
+    import type { PlainDateString } from "./time";
+    import { makePlainDate } from "./time";
+    import DateInput from "./DateInput.svelte";
 
-    let { days = $bindable(), onchange }: {
-        days: PlainMonthDayString[],
+    let { dates = $bindable(), onchange }: {
+        dates: PlainDateString[],
         onchange: () => void
     } = $props();
 
     function addDate() {
-        const today = makePlainMonthDay(Temporal.Now.plainDateISO().toPlainMonthDay());
-        days = [...days, today];
+        const today = makePlainDate(Temporal.Now.plainDateISO());
+        dates = [...dates, today];
         onchange();
     }
 
     function removeDate(index: number) {
-        days = days.filter((_, i) => i !== index);
+        dates = dates.filter((_, i) => i !== index);
         onchange();
     }
 </script>
 
 <div class="date-list-input">
-    {#each days as day, i}
+    {#each dates as date, i}
         <div class="date-item">
             <button 
                 class="remove-button" 
@@ -31,17 +31,17 @@
             >
                 -
             </button>
-            <DayOfYearInput 
-                bind:value={days[i]} 
+            <DateInput 
+                bind:value={dates[i]} 
                 onchange={() => onchange()} 
             />{
-                (i < days.length - 1 && days.length > 2) ? ", " : " "
+                (i < dates.length - 1 && dates.length > 2) ? ", " : " "
             }
         </div>
     {/each}
 
     <button class="add-button blue" onclick={addDate}>
-        + Add Day
+        + Add Date
     </button>
 </div>
 

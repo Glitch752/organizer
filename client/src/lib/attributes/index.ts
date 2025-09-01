@@ -1,4 +1,5 @@
 import { currentDateTimePlus, currentDayPlus, currentPlainTimePlus, getCurrentMonth, getDayOfMonth, getDayOfWeek, getDayOfYear, getWeekOfMonth, getWeekOfYear, getYear, type PlainDateString, type PlainMonthDayString, type PlainTimeString, type ZonedDateTimeString, type ZonedTimeString } from "../datetime/time";
+import type { HexString } from "./color";
 
 export enum AttributeType {
     CalendarEvent = "calendarEvent",
@@ -39,6 +40,9 @@ export enum EventConditionType {
     Not = "not",
     And = "and",
     Or = "or",
+    True = "true",
+    False = "false",
+
     Date = "date",
     DateRange = "dateRange",
     DayOfWeek = "dayOfWeek",
@@ -63,8 +67,7 @@ export const conditionTypes: {
         default: () => ({
             type: EventConditionType.Not,
             condition: {
-                type: EventConditionType.Date,
-                date: currentDayPlus()
+                type: EventConditionType.True
             }
         })
     },
@@ -74,8 +77,7 @@ export const conditionTypes: {
             type: EventConditionType.And,
             conditions: [
                 {
-                    type: EventConditionType.Date,
-                    date: currentDayPlus()
+                    type: EventConditionType.True
                 }
             ]
         })
@@ -86,17 +88,28 @@ export const conditionTypes: {
             type: EventConditionType.Or,
             conditions: [
                 {
-                    type: EventConditionType.Date,
-                    date: currentDayPlus()
+                    type: EventConditionType.True
                 }
             ]
+        })
+    },
+    [EventConditionType.True]: {
+        name: "Always True",
+        default: () => ({
+            type: EventConditionType.True
+        })
+    },
+    [EventConditionType.False]: {
+        name: "Always False",
+        default: () => ({
+            type: EventConditionType.False
         })
     },
     [EventConditionType.Date]: {
         name: "Date",
         default: () => ({
             type: EventConditionType.Date,
-            date: currentDayPlus()
+            dates: [currentDayPlus()]
         })
     },
     [EventConditionType.DateRange]: {
@@ -166,7 +179,7 @@ export type EventCondition = {
     conditions: EventCondition[]
 } | {
     type: EventConditionType.Date,
-    date: PlainDateString
+    dates: PlainDateString[]
 } | {
     type: EventConditionType.DateRange,
     start: PlainDateString,
@@ -198,6 +211,8 @@ export type EventCondition = {
     type: EventConditionType.WeekOfYear,
     /** 1 to 53 */
     weeks: number[]
+} | {
+    type: EventConditionType.True | EventConditionType.False
 };
 
 export enum TimeType {
@@ -280,10 +295,13 @@ export type Attribute = {
     type: AttributeType.CalendarEvent,
     title?: string,
     enabled: boolean,
+    weekViewOnly?: boolean,
+    color?: HexString,
     times: EventTime[]
 } | {
     type: AttributeType.CalendarDeadline,
     title?: string,
     enabled: boolean,
+    color?: HexString,
     due: ZonedDateTimeString
 };
