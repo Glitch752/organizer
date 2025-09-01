@@ -1,0 +1,36 @@
+node_modules/
+dist/
+
+client/node_modules
+server/node_modules
+shared/node_modules
+
+client/dist
+server/dist
+shared/dist
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# environment and database files
+.env
+server/data
+
+# editor/project files
+.vscode/
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS-specific files
+Thumbs.db

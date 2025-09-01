@@ -22,8 +22,6 @@ copyFileSync(srcBinding, "./dist/build/node_sqlite3.node");
 
 // Add an empty package.json because sqlite3 looks for it to find the bindings lol
 writeFileSync("./dist/package.json", "{}");
-// Copy .env.example to dist
-copyFileSync("./.env.example", "./dist/.env");
 // Create a start file
 writeFileSync("./dist/start.sh", `#!/bin/bash\ncd $(dirname "$0")\nnode index.js\n`);
 

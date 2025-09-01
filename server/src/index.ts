@@ -99,17 +99,43 @@ app.get("ws", socketHandler);
 
 // All other paths host the SPA
 app.get('*', serveStatic({
-    root: "../static",
     async getContent(route, c) {
         // Try to serve the requested file, fallback to index.html for SPA routing
         try {
-            const filePath = path.join(__dirname, "../static", route);
+            const filePath = path.join(__dirname, "static", route);
             const file = await fs.readFile(filePath);
-            return new Response(file);
+
+            // Determine mime type based on file extension
+            // Hacky, but whatever
+            const ext = path.extname(filePath).toLowerCase();
+            let contentType = "application/octet-stream";
+            if(ext === ".html") contentType = "text/html";
+            else if(ext === ".js") contentType = "application/javascript";
+            else if(ext === ".css") contentType = "text/css";
+            else if(ext === ".json") contentType = "application/json";
+            else if(ext === ".png") contentType = "image/png";
+            else if(ext === ".jpg" || ext === ".jpeg") contentType = "image/jpeg";
+            else if(ext === ".svg") contentType = "image/svg+xml";
+            else if(ext === ".ico") contentType = "image/x-icon";
+            else if(ext === ".txt") contentType = "text/plain";
+            else if(ext === ".woff") contentType = "font/woff";
+            else if(ext === ".woff2") contentType = "font/woff2";
+            else if(ext === ".ttf") contentType = "font/ttf";
+            else if(ext === ".map") contentType = "application/json";
+
+            return new Response(file, {
+                headers: {
+                    'Content-Type': contentType
+                }
+            });
         } catch (e) {
-            const indexPath = path.join(__dirname, "../static/index.html");
+            const indexPath = path.join(__dirname, "static", "index.html");
             const indexFile = await fs.readFile(indexPath);
-            return new Response(indexFile);
+            return new Response(indexFile, {
+                headers: {
+                    'Content-Type': 'text/html'
+                }
+            });
         }
     }
 }));

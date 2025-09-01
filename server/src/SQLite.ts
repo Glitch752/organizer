@@ -1,5 +1,6 @@
 import type { DatabaseConfiguration } from "@hocuspocus/extension-database";
 import { Database } from "@hocuspocus/extension-database";
+import { mkdirSync } from "fs";
 import sqlite3 from "sqlite3";
 
 const schema = `CREATE TABLE IF NOT EXISTS "documents" (
@@ -278,8 +279,9 @@ export class SQLite extends Database {
 
 
 // Global sqlite instance because I don't want to pass it around everywhere
+mkdirSync('data', { recursive: true });
 export const sqlite = new SQLite({
-    database: 'db.sqlite'
+    database: 'data/db.sqlite'
 });
 
 // Clean up expired sessions every hour

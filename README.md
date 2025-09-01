@@ -24,6 +24,23 @@ Here are some non-goals of this project:
 
 If others begin using this application and are interested in implementing these non-goals, however, I would accept pull requests!
 
+## Running
+The easiest way to run the application is to use the provided Dockerfile:
+
+```
+docker build -t organizer .
+```
+
+Then run the container with:
+
+```
+docker run -p 3000:3000 -v $(pwd)/data:/app/data -e USERS=admin:password organizer
+```
+
+The `USERS` environment variable is a list in the following format: `USERS=user1:password,user2:$hashedpassword2`. If using a password hash, generate it with `echo -n 'yourpassword' | sha256sum | awk '{print $1}'`. Make sure to escape the `$` if you are using a hashed password in a shell.  
+
+And open your browser to `http://localhost:3000`.
+
 ## TODO
 - [ ] Mobile responsiveness
 - [ ] Calendar functionality
