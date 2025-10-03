@@ -67,6 +67,7 @@
 </script>
 
 <div class="controls">
+    <button></button>
 </div>
 <ul>
     {#each $treeview.sort((b, a) => {

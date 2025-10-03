@@ -34,7 +34,7 @@ docker build -t organizer .
 Then run the container with:
 
 ```
-docker run -p 3000:3000 -v $(pwd)/data:/app/data -e USERS=admin:password organizer
+docker run -d --restart unless-stopped -p 3000:3000 -v $(pwd)/data:/app/data -e USERS=admin:password organizer
 ```
 
 The `USERS` environment variable is a list in the following format: `USERS=user1:password,user2:$hashedpassword2`. If using a password hash, generate it with `echo -n 'yourpassword' | sha256sum | awk '{print $1}'`. Make sure to escape the `$` if you are using a hashed password in a shell.  

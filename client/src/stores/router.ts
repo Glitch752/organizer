@@ -13,13 +13,12 @@ import CalendarNav from "../pages/CalendarNav.svelte";
 
 type ComponentSet = {
     page: Component;
-    nav: Component;
     header?: Component;
-    pageOnly?: boolean;
+} & ({
+    nav: Component;
 } | {
-    page: Component;
-    pageOnly: true;
-};
+    pageOnly: boolean;
+});
 
 type RouterPathConstants = readonly {
     matcher: RegExp;

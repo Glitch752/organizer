@@ -40,7 +40,11 @@
 			onclick={() => navOpen = !navOpen}
 			aria-label={navOpen ? "Hide navigation" : "Show navigation"}
 		>
-			{navOpen ? "→" : "←"}
+			{#if navOpen}
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="humbleicons hi-arrow-right"><path xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16m0 0-6 6m6-6-6-6"/></svg>
+			{:else}
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="humbleicons hi-arrow-left"><path xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4m0 0 6-6m-6 6 6 6"/></svg>
+			{/if}
 		</button>
 	</div>
 </header>
