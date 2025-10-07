@@ -70,7 +70,6 @@
     <button aria-label="add page" onclick={() => client.createPage(client.activePage?.id ?? null)}>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="humbleicons hi-plus"><g stroke="currentColor" stroke-linecap="round" stroke-width="2"><path d="M12 19V5M19 12H5"/></g></svg>
     </button>
-    
 </div>
 <ul>
     {#each $treeview.sort((b, a) => {

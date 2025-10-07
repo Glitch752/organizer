@@ -1,7 +1,7 @@
 <script lang="ts">
     import { tick, type Snippet } from "svelte";
     
-    let { target, children }: { target: string, children: Snippet } = $props();
+    let { target = "body", children }: { target?: string, children: Snippet } = $props();
     
     /**
     * Usage: <div use:portal={'css selector'}> or <div use:portal={document.body}>

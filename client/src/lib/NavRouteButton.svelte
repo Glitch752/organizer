@@ -1,6 +1,7 @@
 <script lang="ts">
     import { route } from "../stores/router";
     import type { PageType } from "./client";
+    import ContextMenu from "./ContextMenu.svelte";
     import Self from "./NavRouteButton.svelte";
     import type { Writable } from "svelte/store";
     
@@ -79,20 +80,48 @@
     ondrop={onDrop}
     class:dragging={$dragState.draggedPageId === page.id}
 >
-    <button
-        draggable="true"
-        ondragstart={handleDragStart}
-        ondragend={handleDragEnd}
-        ondragover={handleDragOver}
-        ondragleave={handleDragLeave}
-        class="blue monospace"
-        class:dragging-over={$dragState.dragOverPageId === page.id && $dragState.dragOverPosition === 'child'}
-        class:active={$route.onRoute("page", [page.id])}
-        title={page.id}
-        onclick={() => route.navigate(`/page/${page.id}`)}
+    <!-- TODO: Collapsing nav routes (and persist that?) -->
+    <!-- TODO: Right click context menu -->
+    <ContextMenu
+        items={[
+            {
+                onClick: () => {},
+                label: "Open"
+            },
+            {
+                onClick: () => {},
+                label: "Open in new tab"
+            },
+            { type: "hr", },
+            {
+                onClick: () => {},
+                label: "Create new page"
+            },
+            {
+                onClick: () => {},
+                label: "Rename"
+            },
+            {
+                onClick: () => {},
+                label: "Delete page"
+            }
+        ]}
     >
-        {page.value.name}
-    </button>
+        <button
+            draggable="true"
+            ondragstart={handleDragStart}
+            ondragend={handleDragEnd}
+            ondragover={handleDragOver}
+            ondragleave={handleDragLeave}
+            class="blue monospace"
+            class:dragging-over={$dragState.dragOverPageId === page.id && $dragState.dragOverPosition === 'child'}
+            class:active={$route.onRoute("page", [page.id])}
+            title={page.id}
+            onclick={() => route.navigate(`/page/${page.id}`)}
+        >
+            {page.value.name}
+        </button>
+    </ContextMenu>
 
     {#if Object.values(page.children).length > 0}
         <ul>
