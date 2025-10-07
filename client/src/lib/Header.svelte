@@ -1,5 +1,6 @@
 <script lang="ts">
   	import { route } from "../stores/router";
+  	import { openPalette } from "./commands/CommandPalette.svelte";
 
 	let { navOpen = $bindable() }: {
 		navOpen: boolean
@@ -7,10 +8,6 @@
 	
 	function capitalize(str: string) {
 		return str.charAt(0).toUpperCase() + str.slice(1);
-	}
-
-	function openPalette(text: string = "") {
-		// TODO
 	}
 </script>
 

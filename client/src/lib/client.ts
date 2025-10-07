@@ -64,9 +64,9 @@ export class Client {
         this.workspaceLoadCallbacks = [];
     });
 
-    public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages"));
+    public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages") as YMap<any>);
 
-    private attributesMap: YMap<YArray<Attribute>> = this.workspaceDocument.doc.getMap("attributes");
+    private attributesMap: YMap<YArray<Attribute>> = this.workspaceDocument.doc.getMap("attributes") as YMap<YArray<Attribute>>;
     
     public immutablePageTreeView = writable(this.pageTree.toJsonStructure());
 
@@ -223,11 +223,11 @@ export class Client {
         return this.activePage;
     }
 
-    public createPage(parentId: string | null = null) {
+    public createPage(siblingId: string | null = null) {
         if(!this.workspaceLoaded) throw new Error("Workspace not loaded");
 
         const id = uuidv4();
-        const parentNode = parentId ? this.pageTree.getNode(parentId) : this.pageTree.root();
+        const parentNode = siblingId ? this.pageTree.getNode(siblingId)?.parent() : this.pageTree.root();
         if(!parentNode) throw new Error("Parent node not found");
 
         const node = parentNode.addChild(id, {
@@ -235,6 +235,23 @@ export class Client {
         });
 
         route.navigate(`/page/${id}`);
+    }
+
+    public deletePage(id: string) {
+        if(!this.workspaceLoaded) throw new Error("Workspace not loaded");
+
+        const node = this.pageTree.getNode(id);
+        if(!node) throw new Error("Node not found");
+        
+        // Move to parent or root
+        const parent = node.parent();
+        if(parent) {
+            route.navigate(`/page/${parent.id()}`);
+        } else {
+            route.navigate(`/`);
+        }
+        
+        node.remove();
     }
 
     private resubscribeMeta() {

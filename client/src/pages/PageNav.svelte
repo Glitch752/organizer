@@ -67,7 +67,10 @@
 </script>
 
 <div class="controls">
-    <button></button>
+    <button aria-label="add page" onclick={() => client.createPage(client.activePage?.id ?? null)}>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="humbleicons hi-plus"><g stroke="currentColor" stroke-linecap="round" stroke-width="2"><path d="M12 19V5M19 12H5"/></g></svg>
+    </button>
+    
 </div>
 <ul>
     {#each $treeview.sort((b, a) => {
@@ -89,7 +92,25 @@
     </li>
 </ul>
 
-<style>
+<style lang="scss">
+    .controls {
+        display: flex;
+        flex-direction: row;
+        padding: 0 10px;
+        gap: 10px;
+
+        button {
+            display: grid;
+            place-items: center;
+            border: none;
+            padding: 5px;
+            svg {
+                width: 1rem;
+                height: 1rem;
+            }
+        }
+    }
+
     ul {
         padding: 0;
         position: relative;

@@ -260,6 +260,15 @@ export class YTreeNode<T extends object> {
     }
 
     /**
+     * Get the parent of the node, or null if this is the root.
+     */
+    public parent(): YTreeNode<T> | null {
+        let parentId = this.tree.structure.get(this._id)?.parent;
+        if(!parentId) return null;
+        return new YTreeNode(parentId, this.tree);
+    }
+
+    /**
      * Add a child node with the given value to this node.
      */
     addChild(id: string, values: Partial<T> = {}): YTreeNode<T> {
@@ -274,6 +283,27 @@ export class YTreeNode<T extends object> {
 
         this.tree.map.set(id, nodeDataMap);
         return new YTreeNode(id, this.tree);
+    }
+
+    /**
+     * Remove this node and all its descendants from the tree.
+     */
+    remove() {
+        if(this._id === ROOT_ID) {
+            console.error("Can't remove root.");
+            return;
+        }
+        
+        this.tree.map.doc!.transact(() => {
+            let toRemove: string[] = [];
+            function recursivelyMarkForRemoval(node: YTreeNode<T>) {
+                toRemove.push(node.id());
+                node.children().forEach(child => recursivelyMarkForRemoval(child));
+            }
+            recursivelyMarkForRemoval(this);
+            
+            toRemove.forEach(id => this.tree.map.delete(id));
+        });
     }
 
     /**

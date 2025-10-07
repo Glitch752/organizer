@@ -21,7 +21,15 @@ export const commands: Command[] = [
     {
         name: "New page",
         execute: (client: Client) => {
-            client.createPage();
+            const parent = client.activePage?.id ?? null;
+            client.createPage(parent);
+        }
+    },
+    {
+        name: "Delete current page",
+        execute: (client: Client) => {
+            if(!client.activePage) return;
+            client.deletePage(client.activePage.id);
         }
     },
     {
