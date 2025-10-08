@@ -223,11 +223,16 @@ export class Client {
         return this.activePage;
     }
 
-    public createPage(siblingId: string | null = null) {
+    public createPage(path: { siblingId: string } | { parentId: string } | null) {
         if(!this.workspaceLoaded) throw new Error("Workspace not loaded");
 
         const id = uuidv4();
-        const parentNode = siblingId ? this.pageTree.getNode(siblingId)?.parent() : this.pageTree.root();
+        
+        let parentNode;
+        if(!path) parentNode = this.pageTree.root();
+        else if("siblingId" in path) parentNode = this.pageTree.getNode(path.siblingId)?.parent();
+        else if("parentId" in path) parentNode = this.pageTree.getNode(path.parentId);
+        
         if(!parentNode) throw new Error("Parent node not found");
 
         const node = parentNode.addChild(id, {

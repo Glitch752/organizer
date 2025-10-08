@@ -1,6 +1,6 @@
 <script lang="ts">
     import { route } from "../stores/router";
-    import type { PageType } from "./client";
+    import { client, type PageType } from "./client";
     import ContextMenu from "./ContextMenu.svelte";
     import Self from "./NavRouteButton.svelte";
     import type { Writable } from "svelte/store";
@@ -18,6 +18,8 @@
         }>;
         handleDrop: (targetPageId: string | null, position: 'child' | 'root') => void;
     } = $props();
+
+    let renaming = $state(false);
 
     function handleDragStart(event: DragEvent) {
         if(!event.dataTransfer) return;
@@ -85,20 +87,20 @@
     <ContextMenu
         items={[
             {
-                onClick: () => {},
+                onClick: () => route.navigate(`/page/${page.id}`),
                 label: "Open"
             },
             {
-                onClick: () => {},
+                onClick: () => window.open(route.url(`/page/${page.id}`), '_blank'),
                 label: "Open in new tab"
             },
             { type: "hr", },
             {
-                onClick: () => {},
+                onClick: () => client.createPage({ parentId: page.id }),
                 label: "Create new page"
             },
             {
-                onClick: () => {},
+                onClick: () => renaming = true,
                 label: "Rename"
             },
             {
@@ -108,7 +110,7 @@
         ]}
     >
         <button
-            draggable="true"
+            draggable={!renaming}
             ondragstart={handleDragStart}
             ondragend={handleDragEnd}
             ondragover={handleDragOver}
@@ -116,10 +118,18 @@
             class="blue monospace"
             class:dragging-over={$dragState.dragOverPageId === page.id && $dragState.dragOverPosition === 'child'}
             class:active={$route.onRoute("page", [page.id])}
+            class:renaming={renaming}
             title={page.id}
             onclick={() => route.navigate(`/page/${page.id}`)}
         >
-            {page.value.name}
+            {#if renaming}
+                <input value={page.value.name} onblur={(e) => {
+                    console.log("TODO: Store name " + (e.target as HTMLInputElement).value);
+                    renaming = false;
+                }}/>
+            {:else}
+                {page.value.name}
+            {/if}
         </button>
     </ContextMenu>
 
@@ -150,9 +160,22 @@
         text-align: left;
 
         &.dragging-over {
-            background-color: var(--accent-color-alpha);
             border-radius: 4px;
-            color: var(--accent-color);
+        }
+
+        input {
+            font: inherit;
+            color: inherit;
+            background-color: transparent;
+            border: 1px solid var(--blue);
+            width: min-content;
+            padding: 0;
+            outline: none;
+        }
+
+        &.renaming {
+            pointer-events: none;
+            background-color: var(--surface-1) !important;
         }
     }
     

@@ -119,6 +119,11 @@ class Router<Paths extends RouterPathConstants> {
         this.set(this.getPathData(path));
         history.pushState({}, '', path);
     }
+
+    /** Returns the full url for a route, in case we want to add a base path or something later */
+    public url(path: string): string {
+        return window.location.origin + path;
+    }
 }
 
 /** A svelte action to make links route properly without reloading the page. */

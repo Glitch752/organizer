@@ -21,8 +21,7 @@ export const commands: Command[] = [
     {
         name: "New page",
         execute: (client: Client) => {
-            const parent = client.activePage?.id ?? null;
-            client.createPage(parent);
+            client.createPage(client.activePage ? { siblingId: client.activePage.id } : null);
         }
     },
     {
