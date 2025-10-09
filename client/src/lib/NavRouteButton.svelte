@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { ActionReturn } from "svelte/action";
     import { route } from "../stores/router";
     import { client, type PageType } from "./client";
     import ContextMenu from "./ContextMenu.svelte";
@@ -76,6 +77,15 @@
         const position = $dragState.dragOverPosition;
         if(position && position !== 'root') handleDrop(page.id, position);
     }
+
+    function focusFull(target: HTMLInputElement): ActionReturn {
+        return {
+            update: () => {
+                target.focus();
+                target.setSelectionRange(0, target.value.length, "forward");
+            }
+        };
+    }
 </script>
 
 <li
@@ -123,7 +133,7 @@
             onclick={() => route.navigate(`/page/${page.id}`)}
         >
             {#if renaming}
-                <input value={page.value.name} onblur={(e) => {
+                <input use:focusFull value={page.value.name} onblur={(e) => {
                     console.log("TODO: Store name " + (e.target as HTMLInputElement).value);
                     renaming = false;
                 }}/>
@@ -168,7 +178,7 @@
             color: inherit;
             background-color: transparent;
             border: 1px solid var(--blue);
-            width: min-content;
+            width: calc(100% - 0.5rem);
             padding: 0;
             outline: none;
         }

@@ -1,15 +1,5 @@
-import Home from "../pages/Home.svelte";
-import Calendar from "../pages/Calendar.svelte";
-import Page from "../pages/Page.svelte";
-import Auth from "../pages/Auth.svelte";
-
-import PageHeader from "../pages/PageHeader.svelte";
-import PageNav from "../pages/PageNav.svelte";
-import CalendarHeader from "../pages/CalendarHeader.svelte";
-
 import type { Component } from 'svelte';
 import { writable, type Subscriber, type Unsubscriber } from 'svelte/store';
-import CalendarNav from "../pages/CalendarNav.svelte";
 
 type ComponentSet = {
     page: Component;
@@ -22,7 +12,7 @@ type ComponentSet = {
 
 type RouterPathConstants = readonly {
     matcher: RegExp;
-    components: ComponentSet;
+    components: ComponentSet | (() => Promise<ComponentSet>);
     name: string;
 }[];
 
@@ -39,7 +29,7 @@ class RouteData<Paths extends RouterPathConstants> {
         public routeName: RouteNamesFrom<Paths>,
         public pathname: string,
         public matches: RegExpMatchArray | null,
-        public components: ComponentSet
+        public components: ComponentSet | null
     ) {}
 
     /**
@@ -79,30 +69,40 @@ class Router<Paths extends RouterPathConstants> {
         }
         this.defaultPageName = defaultPath.name;
 
-        this.set = () => {};
-        const initial = this.current = this.getPathData(window.location.pathname);
-        const { subscribe, set } = writable(initial);
+        const emptyRouteData = this.getPathDataWithoutComponents(window.location.pathname);
+
+        const { subscribe, set } = writable<RouteData<Paths>>(emptyRouteData);
         this.subscribe = subscribe;
         this.set = set;
+        
+        this.current = emptyRouteData
+    }
 
-        subscribe((data) => {
-            console.log("Navigated to", data.pathname);
+    /**
+     * Must run before rendering!
+     */
+    public async initialize() {
+        const initial = this.current = await this.getPathData(window.location.pathname);
+        this.set(initial);
+
+        this.subscribe((data) => {
+            console.log("Navigated to", data?.pathname);
             this.current = data;
         });
 
-        window.addEventListener('popstate', () => {
-            set(this.getPathData(window.location.pathname));
+        window.addEventListener('popstate', async () => {
+            this.set(await this.getPathData(window.location.pathname));
         });
     }
 
-    private getPathData(path: string): RouteData<Paths> {
+    private async getPathData(path: string): Promise<RouteData<Paths>> {
         const matchedPath = this.paths.find(p => p.matcher.test(path));
         if(matchedPath) {
             return new RouteData(
                 matchedPath.name,
                 path,
                 path.match(matchedPath.matcher),
-                matchedPath.components,
+                matchedPath.components instanceof Function ? await matchedPath.components() : matchedPath.components
             );
         } else {
             this.navigate("/");
@@ -110,13 +110,33 @@ class Router<Paths extends RouterPathConstants> {
                 this.defaultPageName,
                 path,
                 null,
-                this.defaultPage.components
+                this.defaultPage.components instanceof Function ? await this.defaultPage.components() : this.defaultPage.components
             );
         }
     }
 
-    public navigate(path: string): void {
-        this.set(this.getPathData(path));
+    private getPathDataWithoutComponents(path: string): RouteData<Paths> {
+        const matchedPath = this.paths.find(p => p.matcher.test(path));
+        if(matchedPath) {
+            return new RouteData(
+                matchedPath.name,
+                path,
+                path.match(matchedPath.matcher),
+                null
+            );
+        } else {
+            this.navigate("/");
+            return new RouteData(
+                this.defaultPageName,
+                path,
+                null,
+                null
+            );
+        }
+    }
+
+    public async navigate(path: string): Promise<void> {
+        this.set(await this.getPathData(path));
         history.pushState({}, '', path);
     }
 
@@ -145,25 +165,40 @@ export function link(element: HTMLAnchorElement) {
     };
 }
 
+
 export const route = new Router([
     {
         matcher: /^\/$/,
-        components: { page: Home, nav: PageNav },
+        components: async () => ({
+            page: (await import("../pages/Home.svelte")).default,
+            nav: (await import("../pages/PageNav.svelte")).default
+        }),
         name: "home"
     },
     {
         matcher: /^\/auth$/,
-        components: { page: Auth, pageOnly: true },
+        components: async () => ({
+            page: (await import("../pages/Auth.svelte")).default,
+            pageOnly: true
+        }),
         name: "auth"
     },
     {
         matcher: /^\/calendar$/,
-        components: { page: Calendar, header: CalendarHeader, nav: CalendarNav },
+        components: async () => ({
+            page: (await import("../pages/Calendar.svelte")).default,
+            header: (await import("../pages/CalendarHeader.svelte")).default,
+            nav: (await import("../pages/CalendarNav.svelte")).default
+        }),
         name: "calendar"
     },
     {
         matcher: /^\/page\/([a-zA-Z0-9-]+)$/,
-        components: { page: Page, header: PageHeader, nav: PageNav },
+        components: async () => ({
+            page: (await import("../pages/Page.svelte")).default,
+            header: (await import("../pages/PageHeader.svelte")).default,
+            nav: (await import("../pages/PageNav.svelte")).default
+        }),
         name: "page"
     }
 ] as const);

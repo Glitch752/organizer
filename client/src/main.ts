@@ -2,6 +2,9 @@ import { mount } from 'svelte';
 import './app.scss';
 import App from './App.svelte';
 import "./stores/sync";
+import { route } from './stores/router';
+
+await route.initialize();
 
 const app = mount(App, {
     target: document.getElementById('app')!,
