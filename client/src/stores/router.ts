@@ -4,6 +4,9 @@ import { writable, type Subscriber, type Unsubscriber } from 'svelte/store';
 type ComponentSet = {
     page: Component;
     header?: Component;
+    // cursed TS type hackiness
+    pageOnly?: boolean;
+    nav?: Component;
 } & ({
     nav: Component;
 } | {

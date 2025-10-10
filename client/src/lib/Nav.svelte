@@ -51,4 +51,20 @@
             padding: 0.25rem 0.5rem;
         }
     }
+
+    @media (max-width: 700px) {
+        nav {
+            z-index: 100;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+            transform: translateX(calc(var(--nav-width) * -1));
+            transition: transform 200ms ease;
+            grid-row: 2 / -1;
+        }
+
+        :global(.navOpen) {
+            nav {
+                transform: translateX(0);
+            }
+        }
+    }
 </style>

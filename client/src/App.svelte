@@ -18,20 +18,22 @@
 
 <svelte:window onkeydown={keydown} />
 
-<div class="app" class:navOpen={$navOpen}>
-	{#if !$route.components.pageOnly}
-		<Header bind:navOpen={$navOpen} />
-		<Nav />
-		<CommandPalette />
-	{/if}
+{#if $route.components}
+	<div class="app" class:navOpen={$navOpen}>
+		{#if !$route.components.pageOnly}
+			<Header bind:navOpen={$navOpen} />
+			<Nav />
+			<CommandPalette />
+		{/if}
 
-	<main
-		class:pageOnly={$route.components.pageOnly}
-	>
-		<!-- svelte-ignore svelte_component_deprecated - <Component/> isn't reactive with a writable for some reason? -->
-		<svelte:component this={$route.components.page} />
-	</main>
-</div>
+		<main
+			class:pageOnly={$route.components.pageOnly}
+		>
+			<!-- svelte-ignore svelte_component_deprecated - <Component/> isn't reactive with a writable for some reason? -->
+			<svelte:component this={$route.components.page} />
+		</main>
+	</div>
+{/if}
 
 <style lang="scss">
 	.app {
@@ -59,6 +61,17 @@
 
 		&.pageOnly {
 			grid-column: 1 / -1;
+		}
+	}
+
+	@media (max-width: 700px) {
+		.app {
+			grid-template-columns: 1fr 0 !important;
+			overflow: hidden;
+		}
+
+		.app.navOpen {
+			grid-template-columns: 1fr 0 !important;
 		}
 	}
 </style>
