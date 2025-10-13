@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { execSync } from 'child_process';
 
-const commitHash = execSync('git rev-parse --short HEAD').toString();
+const commitHash = execSync('if [ -d ".git" ]; then git rev-parse --short HEAD; else echo "unknown"; fi').toString();
 
 // https://vite.dev/config/
 export default defineConfig({
