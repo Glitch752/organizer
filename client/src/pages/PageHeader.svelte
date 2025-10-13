@@ -25,6 +25,7 @@
 		background-color: transparent;
 		color: var(--color-text);
 
+		width: 50%;
 		flex: 1;
 	}
 </style>

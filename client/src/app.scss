@@ -50,6 +50,9 @@ pre {
 	box-sizing: border-box;
 }
 
+html {
+	overflow: hidden;
+}
 body {
 	min-height: 100vh;
 	margin: 0;

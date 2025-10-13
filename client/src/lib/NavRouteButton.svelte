@@ -130,7 +130,7 @@
             class:active={$route.onRoute("page", [page.id])}
             class:renaming={renaming}
             title={page.id}
-            onclick={() => route.navigate(`/page/${page.id}`)}
+            onclick={() => client.openPage(page.id)}
         >
             {#if renaming}
                 <input use:focusFull value={page.value.name} onblur={(e) => {

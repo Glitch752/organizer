@@ -12,6 +12,7 @@
 </script>
 
 <!-- This is a gross mess of nested flexboxes, but it works -->
+{#if $route.components}
 <header>
 	<div class="left"></div>
 	<div class="content-aligned" class:onPage={$route.onRoute("page")}>
@@ -45,6 +46,7 @@
 		</button>
 	</div>
 </header>
+{/if}
 
 <style lang="scss">
 	header {
@@ -62,6 +64,8 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
+
+		max-width: 100vw;
 
 		button {
 			width: 2rem;
@@ -104,7 +108,10 @@
 		display: flex;
 		flex-direction: row;
 		gap: 0.5rem;
-		
+
+		// Don't allow content to overflow our width
+		overflow: hidden;
+
 		// Yay for magic numbers
 		&.onPage {
 			max-width: calc(var(--max-content-width) - 1.5rem);

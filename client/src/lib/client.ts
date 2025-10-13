@@ -10,6 +10,7 @@ import type { YArray, YMap } from "../../../shared/yjsFixes";
 import type { Attribute } from "./attributes";
 import { v4 as uuidv4 } from "uuid";
 import { route } from "../stores/router";
+import { isMobile } from "./util/device.svelte";
 
 type UserColor = {
     color: string,
@@ -257,6 +258,13 @@ export class Client {
         }
         
         node.remove();
+    }
+
+    public openPage(id: string) {
+        route.navigate(`/page/${id}`);
+        if(isMobile()) {
+            document.dispatchEvent(new CustomEvent("nav-close"));
+        }
     }
 
     private resubscribeMeta() {

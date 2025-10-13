@@ -89,7 +89,6 @@ class Router<Paths extends RouterPathConstants> {
         this.set(initial);
 
         this.subscribe((data) => {
-            console.log("Navigated to", data?.pathname);
             this.current = data;
         });
 

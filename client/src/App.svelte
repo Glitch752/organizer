@@ -4,6 +4,7 @@
 	import { persistentState } from "./stores/persistent";
 	import { route } from "./stores/router";
 	import CommandPalette from "./lib/commands/CommandPalette.svelte";
+  	import { deviceType } from "./lib/util/device.svelte";
 
 	let navOpen = persistentState<boolean>("navOpen", true);
 
@@ -14,12 +15,26 @@
 			event.preventDefault();
 		}
 	}
+
+	$effect(() => {
+		const navCloseFn = () => {
+			navOpen.set(false);
+		};
+		const navOpenFn = () => navOpen.set(true);
+
+		document.addEventListener("nav-close", navCloseFn);
+		document.addEventListener("nav-open", navOpenFn);
+		return () => {
+			document.removeEventListener("nav-close", navCloseFn);
+			document.removeEventListener("nav-open", navOpenFn);
+		};
+	});
 </script>
 
 <svelte:window onkeydown={keydown} />
 
 {#if $route.components}
-	<div class="app" class:navOpen={$navOpen}>
+	<div class="app" class:navOpen={$navOpen} class:mobile={deviceType.isMobile}>
 		{#if !$route.components.pageOnly}
 			<Header bind:navOpen={$navOpen} />
 			<Nav />
