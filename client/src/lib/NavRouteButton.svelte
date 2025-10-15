@@ -111,7 +111,8 @@
                 label: "Rename"
             },
             {
-                onClick: () => {},
+                // TODO: Confirmation?
+                onClick: () => client.deletePage(page.id),
                 label: "Delete page"
             }
         ]}
