@@ -267,6 +267,16 @@ export class Client {
         }
     }
 
+    public renamePage(id: string, newName: string) {
+        if(!this.workspaceLoaded) throw new Error("Workspace not loaded");
+        
+        const node = this.pageTree.getNode(id);
+        if(!node) throw new Error("Node not found");
+        
+        const meta = node.map;
+        meta.set("name", newName);
+    }
+
     private resubscribeMeta() {
         for(const { resubscribe } of this.metadataStores.values()) resubscribe();
     }

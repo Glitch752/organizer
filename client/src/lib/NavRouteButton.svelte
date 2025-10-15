@@ -79,12 +79,9 @@
     }
 
     function focusFull(target: HTMLInputElement): ActionReturn {
-        return {
-            update: () => {
-                target.focus();
-                target.setSelectionRange(0, target.value.length, "forward");
-            }
-        };
+        target.focus();
+        target.setSelectionRange(0, target.value.length);
+        return {}
     }
 </script>
 
@@ -130,11 +127,13 @@
             class:active={$route.onRoute("page", [page.id])}
             class:renaming={renaming}
             title={page.id}
-            onclick={() => client.openPage(page.id)}
+            onclick={() => {
+                if(!renaming) client.openPage(page.id)
+            }}
         >
             {#if renaming}
                 <input use:focusFull value={page.value.name} onblur={(e) => {
-                    console.log("TODO: Store name " + (e.target as HTMLInputElement).value);
+                    client.renamePage(page.id, (e.target as HTMLInputElement).value);
                     renaming = false;
                 }}/>
             {:else}
