@@ -37,7 +37,8 @@ export type EditorInfo = {
 };
 
 export type PageMeta = {
-    name: string
+    name: string,
+    collapsed?: boolean
 };
 export type PageType = TreeJsonStructure<PageMeta>;
 
@@ -237,7 +238,8 @@ export class Client {
         if(!parentNode) throw new Error("Parent node not found");
 
         const node = parentNode.addChild(id, {
-            name: "Untitled"
+            name: "Untitled",
+            collapsed: false
         });
 
         route.navigate(`/page/${id}`);
@@ -275,6 +277,15 @@ export class Client {
         
         const meta = node.map;
         meta.set("name", newName);
+    }
+
+    public toggleCollapse(id: string) {
+        if(!this.workspaceLoaded) throw new Error("Workspace not loaded");
+        const node = this.pageTree.getNode(id);
+        if(!node) throw new Error("Node not found");
+        
+        const meta = node.map;
+        meta.set("collapsed", !meta.get("collapsed"));
     }
 
     private resubscribeMeta() {

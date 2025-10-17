@@ -101,7 +101,7 @@
                 onClick: () => window.open(route.url(`/page/${page.id}`), '_blank'),
                 label: "Open in new tab"
             },
-            { type: "hr", },
+            { type: "hr" },
             {
                 onClick: () => client.createPage({ parentId: page.id }),
                 label: "Create new page"
@@ -114,9 +114,21 @@
                 // TODO: Confirmation?
                 onClick: () => client.deletePage(page.id),
                 label: "Delete page"
+            },
+            { type: "hr" },
+            {
+                onClick: () => client.toggleCollapse(page.id),
+                label: page.value.collapsed ? "Expand" : "Collapse"
             }
         ]}
     >
+        {#if page.value.collapsed}
+            <button
+                class="blue monospace"
+                title={page.id}
+                onclick={() => client.toggleCollapse(page.id)}
+            >▶</button>
+        {/if}
         <button
             draggable={!renaming}
             ondragstart={handleDragStart}
@@ -143,7 +155,7 @@
         </button>
     </ContextMenu>
 
-    {#if Object.values(page.children).length > 0}
+    {#if !page.value.collapsed && Object.values(page.children).length > 0}
         <ul>
             {#each Object.values(page.children).sort((b, a) => {
                 // Sort by name; the view is already sorted by ID, so ties are handled appropriately.
