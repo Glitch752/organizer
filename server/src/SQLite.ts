@@ -1,7 +1,6 @@
-import type { DatabaseConfiguration } from "@hocuspocus/extension-database";
-import { Database } from "@hocuspocus/extension-database";
 import { mkdirSync } from "fs";
 import sqlite3 from "sqlite3";
+import { Database, DatabaseConfiguration } from "./Database";
 
 const schema = `CREATE TABLE IF NOT EXISTS "documents" (
   "name" varchar(255) NOT NULL,

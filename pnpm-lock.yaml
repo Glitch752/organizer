@@ -113,12 +113,9 @@ importers:
 
   server:
     dependencies:
-      '@hocuspocus/extension-database':
-        specifier: ^3.2.3
-        version: 3.2.3(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27)
       '@hocuspocus/server':
-        specifier: ^3.2.3
-        version: 3.2.3(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27)
+        specifier: ^3.2.6
+        version: 3.2.6(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27)
       '@hono/node-server':
         specifier: ^1.19.1
         version: 1.19.1(hono@4.9.5)
@@ -140,6 +137,9 @@ importers:
       sqlite3:
         specifier: ^5.1.7
         version: 5.1.7
+      yjs:
+        specifier: ^13.6.8
+        version: 13.6.27
       zod:
         specifier: ^4.1.5
         version: 4.1.5
@@ -381,10 +381,8 @@ packages:
   '@hocuspocus/common@3.2.3':
     resolution: {integrity: sha512-P8COsx2HVXS7NbDEKe9KSt5Hd1A95hZhyTabiNPlU/Pi+7K1RJuHqIkIRr4oIxGzujvpLq/LSwBHP4NYUk+cGA==}
 
-  '@hocuspocus/extension-database@3.2.3':
-    resolution: {integrity: sha512-RenCXDy6Qy/wqA2PSBOS4AcQHZZohUXTa9Mv5Mucsi1qqKsGsSLstbWpiugg556AG2gWq0vl/zmBTsn4eoeVag==}
-    peerDependencies:
-      yjs: ^13.6.8
+  '@hocuspocus/common@3.2.6':
+    resolution: {integrity: sha512-e7bfa2PmgnN2ENa2PZMpnf0K2u1+SysaMDDzhvUOvT1rvnN8Y/8AKBybqDjzaSYWcuU4M7SzQqwZaLXv4BBS3A==}
 
   '@hocuspocus/provider@3.2.3':
     resolution: {integrity: sha512-M62Fly7s6sKKGGFze46fypjV3jv2Y2l8PA6/+IgbQRWH275p8NjGP1U7yMOxi52PLFrgaEoy+fQyW93iJ2jqaw==}
@@ -392,8 +390,8 @@ packages:
       y-protocols: ^1.0.6
       yjs: ^13.6.8
 
-  '@hocuspocus/server@3.2.3':
-    resolution: {integrity: sha512-JVidUfVWQJXC2ngDAMvrAK99V5NoGo/5/R/VvJU6bkOwHKfvl/UpFQjP9FwIiDQ/Uwj9P0mQr1gyWs2Tx4k7/w==}
+  '@hocuspocus/server@3.2.6':
+    resolution: {integrity: sha512-0ZK53OrwhUEiTyVhcG5Dgx3mj+ovb+fXUULqE7VM+m/e0mkw6TUZGpKs+lRcewMybFJ6Pw7Ke79m5+8mvEInNw==}
     peerDependencies:
       y-protocols: ^1.0.6
       yjs: ^13.6.8
@@ -739,6 +737,9 @@ packages:
 
   async-lock@1.4.1:
     resolution: {integrity: sha512-Az2ZTpuytrtqENulXwO3GGv1Bztugx6TT37NIo7imr/Qo0gsYiGtSdBa2B6fsXhTpVZDNfu1Qn3pk531e3q+nQ==}
+
+  async-mutex@0.5.0:
+    resolution: {integrity: sha512-1A94B18jkJ3DYq284ohPxoXbfTA5HsQ7/Mf4DEhcyLx3Bz27Rh59iScbB6EPiP+B+joue6YCxcMXSbFC1tZKwA==}
 
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
@@ -1351,6 +1352,9 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
+  tslib@2.8.1:
+    resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+
   tsx@4.20.5:
     resolution: {integrity: sha512-+wKjMNU9w/EaQayHXb7WA7ZaHY6hN8WgfvHNQ3t1PnU91/7O8TcTnIhCDYTZwnt8JsO9IBqZ30Ln1r7pPF52Aw==}
     engines: {node: '>=18.0.0'}
@@ -1690,14 +1694,9 @@ snapshots:
     dependencies:
       lib0: 0.2.114
 
-  '@hocuspocus/extension-database@3.2.3(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27)':
+  '@hocuspocus/common@3.2.6':
     dependencies:
-      '@hocuspocus/server': 3.2.3(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27)
-      yjs: 13.6.27
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-      - y-protocols
+      lib0: 0.2.114
 
   '@hocuspocus/provider@3.2.3(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27)':
     dependencies:
@@ -1711,13 +1710,13 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@hocuspocus/server@3.2.3(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27)':
+  '@hocuspocus/server@3.2.6(y-protocols@1.0.6(yjs@13.6.27))(yjs@13.6.27)':
     dependencies:
-      '@hocuspocus/common': 3.2.3
+      '@hocuspocus/common': 3.2.6
       async-lock: 1.4.1
+      async-mutex: 0.5.0
       kleur: 4.1.5
       lib0: 0.2.114
-      uuid: 11.1.0
       ws: 8.18.3
       y-protocols: 1.0.6(yjs@13.6.27)
       yjs: 13.6.27
@@ -2027,6 +2026,10 @@ snapshots:
   aria-query@5.3.2: {}
 
   async-lock@1.4.1: {}
+
+  async-mutex@0.5.0:
+    dependencies:
+      tslib: 2.8.1
 
   axobject-query@4.1.0: {}
 
@@ -2791,6 +2794,8 @@ snapshots:
     dependencies:
       is-number: 7.0.0
     optional: true
+
+  tslib@2.8.1: {}
 
   tsx@4.20.5:
     dependencies:
