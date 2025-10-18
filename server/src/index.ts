@@ -13,6 +13,7 @@ import { serveStatic } from "hono/serve-static";
 
 import path from "path";
 import fs from "fs/promises";
+import MockWebsocketHub from "./MockWebsocket";
 
 const hocuspocus = new Hocuspocus({
     yDocOptions: {
@@ -82,20 +83,25 @@ const hocuspocus = new Hocuspocus({
 const app = new Hono();
 
 const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
-
-const socketHandler = upgradeWebSocket((c) => ({
+app.get("ws", upgradeWebSocket((c) => ({
     onOpen(_evt, ws) {
+        if(!ws.raw) {
+            throw new Error("WebSocket raw object is missing");
+        }
+
         const req = {
             ...c.req.raw,
             headers: {
                 cookie: c.req.header("cookie") || ""
             }
         };
-        hocuspocus.handleConnection(ws.raw!, req as any);
-    }
-}));
 
-app.get("ws", socketHandler);
+        const hub = new MockWebsocketHub(ws.raw as any);
+        const hocuspocusSocket = hub.createChild("h");
+
+        hocuspocus.handleConnection(hocuspocusSocket, req as any);
+    }
+})));
 
 // All other paths host the SPA
 app.get('*', serveStatic({

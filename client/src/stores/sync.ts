@@ -3,6 +3,7 @@ import { HocuspocusProvider, HocuspocusProviderWebsocket } from "@hocuspocus/pro
 import * as Y from "yjs";
 import { Awareness } from "y-protocols/awareness";
 import { route } from "./router";
+import MockWebsocketHub from "../lib/util/MockWebsocket";
 
 const websocketURL = `ws${location.protocol === "https:" ? "s" : ""}://${location.host}/ws`;
 console.log(`Websocket URL: ${websocketURL}`);
@@ -13,13 +14,28 @@ export type DocSubscription = {
     disconnect(): void
 };
 
+const backingSocket = new WebSocket(websocketURL);
+backingSocket.onopen = () => {
+    console.log("Backing WebSocket connection opened");
+};
+backingSocket.onclose = () => {
+    console.log("Backing WebSocket connection closed");
+};
+backingSocket.onerror = (error) => {
+    console.error("Backing WebSocket error:", error);
+};
+
+const wsHub = new MockWebsocketHub(backingSocket);
+const hocuspocusSocketConstructor = wsHub.createChildFakePolyfill("h");
+
 const hocuspocusSocket = new HocuspocusProviderWebsocket({
-    url: websocketURL,
+    url: "---",
     autoConnect: true,
     maxAttempts: 0,
     delay: 500,
     minDelay: 500,
     factor: 1.1,
+    WebSocketPolyfill: hocuspocusSocketConstructor,
     async handleTimeout() {
         console.log("Websocket connection timeout");
     },
@@ -45,7 +61,16 @@ export async function reconnectSocket() {
 export function getDocument(id: string, loadedCallback: (() => void) | null = null): DocSubscription {
     const doc = new Y.Doc();
 
-    const localPersistence = new IndexeddbPersistence(id, doc);
+    // const localPersistence = new IndexeddbPersistence(id, doc);
+
+    // localPersistence.once("synced", () => {
+    //     console.log(`Locally-saved IndexDB content loaded for ${id}`);
+    //     if(!loaded) {
+    //         loaded = true;
+    //         loadedCallback?.();
+    //     }
+    // });
+
     const remoteProvider = new HocuspocusProvider({
         websocketProvider: hocuspocusSocket,
         name: id,
@@ -56,14 +81,6 @@ export function getDocument(id: string, loadedCallback: (() => void) | null = nu
     // TODO: Read remoteProvider.hasUnsyncedChanges and use it to show a "syncing" indicator in the UI
 
     let loaded = false;
-
-    localPersistence.once("synced", () => {
-        console.log(`Locally-saved IndexDB content loaded for ${id}`);
-        if(!loaded) {
-            loaded = true;
-            loadedCallback?.();
-        }
-    });
 
     remoteProvider.on("synced", () => {
         console.log(`Synced to remote provider for ${id}`);
@@ -98,7 +115,7 @@ export function getDocument(id: string, loadedCallback: (() => void) | null = nu
         disconnect() {
             remoteProvider.detach();
             remoteProvider.destroy();
-            localPersistence.destroy();
+            // localPersistence.destroy();
             doc.destroy();
         }
     };
