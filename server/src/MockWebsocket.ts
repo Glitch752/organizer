@@ -39,13 +39,13 @@ export class MockSocket extends EventEmitter implements WebSocket {
         | typeof WebSocket.CLOSING
         | typeof WebSocket.CLOSED;
     
+    binaryType: "fragments" | "arraybuffer" | "nodebuffer" = "arraybuffer";
+    
     // Garbage that we need but don't really handle
     readonly CONNECTING: typeof WebSocket.CONNECTING = WebSocket.CONNECTING;
     readonly OPEN: typeof WebSocket.OPEN = WebSocket.OPEN;
     readonly CLOSING: typeof WebSocket.CLOSING = WebSocket.CLOSING;
     readonly CLOSED: typeof WebSocket.CLOSED = WebSocket.CLOSED;
-    get binaryType(): "arraybuffer" { return "arraybuffer"; }
-    set binaryType(_: "blob" | "arraybuffer") { console.error("MockSocket: setting binaryType is not supported"); }
     get bufferedAmount(): number { return 0; }
     set bufferedAmount(_: number) { console.error("MockSocket: setting bufferedAmount is not supported"); }
     get extensions(): string { return ""; }
@@ -57,9 +57,6 @@ export class MockSocket extends EventEmitter implements WebSocket {
     get url(): string { return ""; }
     set url(_: string) { console.error("MockSocket: setting url is not supported"); }
 
-    ping(data?: any, mask?: boolean, cb?: (err: Error) => void): void {
-        console.error("MockSocket: ping called but not implemented");
-    }
     pong(data?: any, mask?: boolean, cb?: (err: Error) => void): void {
         console.error("MockSocket: pong called but not implemented");
     }
@@ -89,8 +86,8 @@ export class MockSocket extends EventEmitter implements WebSocket {
         listener: ((event: WebSocketEventMap[K]) => void),
         options?: EventListenerOptions,
     ): void {
-        if(!['message', 'open', 'close', 'error'].includes(type)) {
-            console.warn(`MockSocket: unsupported event type "${type}" in .on()`);
+        if(!['message', 'open', 'close', 'error', 'pong'].includes(type)) {
+            console.warn(`MockSocket: unsupported event type "${type}" in addEventListener()`);
             return this as any;
         }
 
@@ -113,20 +110,61 @@ export class MockSocket extends EventEmitter implements WebSocket {
         if(set.size === 0) this._listeners.delete(type);
     }
 
-    // All of the other words for the same thing
+    // Note: These "on" functions actually pass different arguments than the standard WebSocket ones,
+    // which makes this pretty annoying.
+
+    // on(event: "close", listener: (this: WebSocket, code: number, reason: Buffer) => void): this;
+    // on(event: "error", listener: (this: WebSocket, error: Error) => void): this;
+    // on(event: "upgrade", listener: (this: WebSocket, request: IncomingMessage) => void): this;
+    // on(event: "message", listener: (this: WebSocket, data: WebSocket.RawData, isBinary: boolean) => void): this;
+    // on(event: "open", listener: (this: WebSocket) => void): this;
+    // on(event: "ping" | "pong", listener: (this: WebSocket, data: Buffer) => void): this;
+    // on(event: "redirect", listener: (this: WebSocket, url: string, request: ClientRequest) => void): this;
+    // on(
+    //     event: "unexpected-response",
+    //     listener: (this: WebSocket, request: ClientRequest, response: IncomingMessage) => void,
+    // ): this;
+    
+    private static onArgMap: { [event in keyof WebSocket.WebSocketEventMap]: (event: WebSocket.WebSocketEventMap[event]) => any[] } = {
+        'message': (ev) => [ev.data, typeof ev.data === 'string' ? false : true],
+        'open': (ev) => [],
+        'close': (ev) => [ev.code, Buffer.from(ev.reason || '')],
+        'error': (ev) => [new Error(ev.message)],
+    };
+
+    /** Probably not the cleanest way to structure this, but whatever */
+    private onEvents: Map<(...args: any[]) => void, EventHandler> = new Map();
+
     // @ts-expect-error whatever at this point, node WS types are funky
     on(event: string | symbol, listener: (...args: any[]) => void): this {
-        this.addEventListener(event as any, listener as any);
+        const cb = (ev: any) => {
+            if(!MockSocket.onArgMap[event as keyof WebSocket.WebSocketEventMap]) {
+                listener(ev);
+            } else {
+                const args = (MockSocket.onArgMap as any)[event as any]?.(ev) || [];
+                listener(...args);
+            }
+        };
+        this.onEvents.set(listener, cb);
+        this.addEventListener(event as any, cb);
         return this;
     }
     // @ts-expect-error whatever at this point, node WS types are funky
     once(event: string | symbol, listener: (...args: any[]) => void): this {
-        this.addEventListener(event as any, listener as any);
+        const wrapper = (...args: any[]) => {
+            listener(...args);
+            this.off(event, wrapper);
+        }
+        this.on(event, wrapper);
         return this;
     }
     // @ts-expect-error whatever at this point, node WS types are funky
     off(event: string | symbol, listener: (...args: any[]) => void): this {
-        this.removeEventListener(event as any, listener as any);
+        const cb = this.onEvents.get(listener);
+        if(cb) {
+            this.removeEventListener(event as any, cb);
+            this.onEvents.delete(listener);
+        }
         return this;
     }
     // @ts-expect-error whatever at this point, node WS types are funky
@@ -152,12 +190,13 @@ export class MockSocket extends EventEmitter implements WebSocket {
         return 0;
     }
 
-    private dispatch(type: 'message' | 'open' | 'close' | 'error', ev: MessageEventLike) {
+    private dispatch(type: 'message' | 'open' | 'close' | 'error' | 'pong', ev: MessageEventLike) {
         const handler = {
             'message': this.onmessage,
             'open': this.onopen,
             'close': this.onclose,
             'error': this.onerror,
+            'pong': null
         }[type];
         try {
             if(handler) {
@@ -200,6 +239,23 @@ export class MockSocket extends EventEmitter implements WebSocket {
         }
     }
 
+    ping(data?: any, mask?: boolean, cb?: (err: Error) => void): void {
+        if(this.readyState !== this.OPEN) {
+            throw new Error('Socket is not open');
+        }
+        if(this.prefix !== null) {
+            this.hub._childPing(this, data, mask, cb);
+        } else {
+            this.hub._rootPing(this, data, mask, cb);
+        }
+    }
+
+    _pong(data: MessageData) {
+        // Just emit pong event
+        // Super hacky typing but whatever
+        this.dispatch('pong', data as unknown as MessageEventLike);
+    }
+
     terminate(): void {
         this.close();
     }
@@ -218,6 +274,18 @@ export class MockSocket extends EventEmitter implements WebSocket {
     // Hub delivers a message into this socket (the data is already un-prefixed)
     _deliver(data: MessageData) {
         if(this.readyState !== this.OPEN) return;
+
+        // Convert to our binaryType if binary
+        if(typeof data !== 'string') {
+            if(this.binaryType === 'arraybuffer' && data instanceof Uint8Array) {
+                // technically not the right type, but Uint8Array seems to work fine
+            } else if(this.binaryType === 'nodebuffer' && data instanceof ArrayBuffer) {
+                data = Buffer.from(data);
+            } else if(this.binaryType === 'fragments') {
+                console.error("MockSocket: binaryType 'fragments' is not supported. literally no clue what this does.");
+            }
+        }
+
         this.dispatch('message', { data });
     }
 
@@ -254,6 +322,10 @@ export class MockWebsocketHub {
             this.root._emitError(err?.toString?.() ?? String(err));
         });
 
+        this.backingSocket.on('pong', (data: Buffer) => {
+            this.handleBackingPong(data);
+        });
+
         // If backing socket is already open, emit open on root right away
         if(this.backingSocket.readyState === WebSocket.OPEN) {
             this.root._emitOpen();
@@ -287,7 +359,7 @@ export class MockWebsocketHub {
             return;
         }
 
-        // Buffer | ArrayBuffer | Uint8Array | Buffer[]
+        // Buffer | ArrayBuffer | Uint8Array
         let bytes: Uint8Array;
         if(Buffer.isBuffer(data)) {
             bytes = new Uint8Array(data);
@@ -367,6 +439,53 @@ export class MockWebsocketHub {
         }
         this.children.clear();
         this.root.readyState = WebSocket.CLOSED;
+    }
+
+    _childPing(socket: MockSocket, data?: any, mask?: boolean, cb?: (err: Error) => void): void {
+        if(this.backingSocket.readyState !== WebSocket.OPEN) {
+            cb?.(new Error('Backing socket is not open'));
+            return;
+        }
+        // Technically, we could go over the max ping data length here, but
+        // most people probably aren't sending 127 bytes of ping data...
+        if(typeof data === 'string') {
+            // Not sure if this can happen, but the types for ws' ping() are really unclear
+            this.backingSocket.ping(`${socket.prefix}:${data}`, mask, cb);
+        } else {
+            const prefixHeader = this.textEncoder.encode(`${socket.prefix}:`);
+            const payload = toUint8Array(data);
+            const full = concatUint8Arrays(prefixHeader, payload);
+            this.backingSocket.ping(full, mask, cb);
+        }
+    }
+
+    _rootPing(socket: MockSocket, data?: any, mask?: boolean, cb?: (err: Error) => void): void {
+        if(socket !== this.root) {
+            cb?.(new Error('Invalid root sender'));
+            return;
+        }
+        if(this.backingSocket.readyState !== WebSocket.OPEN) {
+            cb?.(new Error("Backing socket isn't open"));
+            return;
+        }
+        // There's no way to differentiate this from child pings. whatever though.
+        this.backingSocket.ping(data, mask, cb);
+    }
+
+    private handleBackingPong(data: Buffer) {
+        const colonIndex = data.indexOf(0x3A); // ':'
+        if(colonIndex === -1) return;
+        const prefixBytes = data.subarray(0, colonIndex);
+        const payloadBytes = data.subarray(colonIndex + 1);
+        const prefix = this.textDecoder.decode(prefixBytes);
+        const child = this.children.get(prefix);
+
+        if(!child) {
+            this.root._emitError(`No child for ping prefix "${prefix}"`);
+            return;
+        }
+
+        child._pong(payloadBytes.slice());
     }
 }
 

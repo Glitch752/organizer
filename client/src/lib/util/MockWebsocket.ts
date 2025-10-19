@@ -237,6 +237,8 @@ export class MockWebsocketHub {
     private textEncoder = new TextEncoder();
 
     constructor(private backingSocket: WebSocket) {
+        backingSocket.binaryType = "arraybuffer";
+        
         this.backingSocket.addEventListener('open', () => {
             this.openAll();
         });
@@ -263,10 +265,14 @@ export class MockWebsocketHub {
     createChildFakePolyfill(prefix: string): {
         new (_url: string): MockSocket;
     } {
+        if(!prefix || prefix.includes(':')) throw new Error('Prefix must be a non-empty string without ":"');
         const hub = this;
+
         // CRAZY javascript code holy
         return class extends MockSocket {
             constructor(_url: string) {
+                if(hub.children.has(prefix)) throw new Error(`Child prefix "${prefix}" already exists`);
+
                 console.log(`MockWebsocketHub: creating child socket with prefix "${prefix}" via fake polyfill for URL ${_url}`);
                 super(hub, prefix, hub.backingSocket.readyState);
                 hub.children.set(prefix, this);
@@ -300,11 +306,8 @@ export class MockWebsocketHub {
             return;
         }
 
-        // Buffer | ArrayBuffer | Uint8Array | Buffer[]
         let bytes: Uint8Array;
-        if(Buffer.isBuffer(data)) {
-            bytes = new Uint8Array(data);
-        } else if(data instanceof ArrayBuffer) {
+        if(data instanceof ArrayBuffer) {
             bytes = toUint8Array(data);
         } else if(data instanceof Uint8Array) {
             bytes = data;
