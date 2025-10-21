@@ -1,4 +1,5 @@
-import { getDocument, type DocSubscription } from "../stores/sync";
+import { type DocSubscription } from "../connection";
+import { getDocument } from "../connection/document";
 import * as Y from "yjs";
 import { LimitedMap } from "./util/LimitedMap";
 import { debounce } from "./util/time";

@@ -1,0 +1,1 @@
+export type DocumentID = string & { readonly __document_id: unique symbol };

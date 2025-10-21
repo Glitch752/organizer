@@ -1,7 +1,7 @@
 import { mount } from 'svelte';
 import './app.scss';
 import App from './App.svelte';
-import "./stores/sync";
+import "./connection";
 import { route } from './stores/router';
 
 import Auth from './pages/Auth.svelte';

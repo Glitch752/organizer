@@ -1,13 +1,6 @@
-import { mkdirSync } from "fs";
 import sqlite3 from "sqlite3";
-import { Database, DatabaseConfiguration } from "./Database";
 
-const schema = `CREATE TABLE IF NOT EXISTS "documents" (
-  "name" varchar(255) NOT NULL,
-  "data" blob NOT NULL,
-  UNIQUE(name)
-);
-
+const schema = `
 CREATE TABLE IF NOT EXISTS "sessions" (
   "session_id" varchar(255) NOT NULL,
   "username" varchar(255) NOT NULL,
@@ -15,23 +8,6 @@ CREATE TABLE IF NOT EXISTS "sessions" (
   "expires_at" datetime,
   UNIQUE(session_id)
 )`;
-
-const selectQuery = `
-  SELECT data FROM "documents" WHERE name = $name ORDER BY rowid DESC
-`;
-
-const upsertQuery = `
-  INSERT INTO "documents" ("name", "data") VALUES ($name, $data)
-    ON CONFLICT(name) DO UPDATE SET data = $data
-`;
-
-const listDocumentsQuery = `
-  SELECT name FROM "documents" ORDER BY name
-`;
-
-const deleteDocumentQuery = `
-  DELETE FROM "documents" WHERE name = $name
-`;
 
 const insertSessionQuery = `
   INSERT INTO "sessions" ("session_id", "username", "expires_at") VALUES ($session_id, $username, $expires_at)
@@ -52,7 +28,7 @@ const cleanupExpiredSessionsQuery = `
 
 const SQLITE_INMEMORY = ":memory:";
 
-export interface SQLiteConfiguration extends DatabaseConfiguration {
+export interface SQLiteConfiguration {
 	/**
 	 * Valid values are filenames, ":memory:" for an anonymous in-memory database and an empty
 	 * string for an anonymous disk-based database. Anonymous databases are not persisted and
@@ -67,47 +43,22 @@ export interface SQLiteConfiguration extends DatabaseConfiguration {
 	schema: string;
 }
 
-export class SQLite extends Database {
+export class SQLite {
 	db?: sqlite3.Database;
 
 	configuration: SQLiteConfiguration = {
 		database: SQLITE_INMEMORY,
-		schema,
-		fetch: async ({ documentName }) => {
-			return new Promise((resolve, reject) => {
-				this.db?.get(
-					selectQuery,
-					{
-						$name: documentName,
-					},
-					(error, row) => {
-						if (error) {
-							reject(error);
-						}
-
-						resolve((row as any)?.data);
-					},
-				);
-			});
-		},
-		store: async ({ documentName, state }) => {
-			this.db?.run(upsertQuery, {
-				$name: documentName,
-				$data: state,
-			});
-		},
+		schema
 	};
 
 	constructor(configuration?: Partial<SQLiteConfiguration>) {
-		super({});
-
 		this.configuration = {
 			...this.configuration,
 			...configuration,
 		};
 	}
 
-	async onConfigure() {
+	async initialize() {
 		this.db = new sqlite3.Database(this.configuration.database);
 		// Split the schema by semicolons and run each statement
         // Not perfect, but it works for us
@@ -120,76 +71,6 @@ export class SQLite extends Database {
 				});
 			});
 		}
-	}
-
-	async onListen() {
-		if(this.configuration.database === SQLITE_INMEMORY) {
-			console.warn("The SQLite extension is configured as an in-memory database. All changes will be lost on restart!");
-		}
-	}
-
-	/**
-	 * Get the names of all documents in the database
-	 */
-	async getDocumentNames(): Promise<string[]> {
-		return new Promise((resolve, reject) => {
-			this.db?.all(
-				listDocumentsQuery,
-				(error, rows) => {
-					if(error) {
-						reject(error);
-					} else {
-						resolve((rows as any[])?.map(row => row.name) || []);
-					}
-				}
-			);
-		});
-	}
-
-	/**
-	 * Remove one or more documents from the database entirely
-	 */
-	async removeDocument(documentNames: string | string[]): Promise<void> {
-		const names = Array.isArray(documentNames) ? documentNames : [documentNames];
-		
-		if (names.length === 0) {
-			return Promise.resolve();
-		}
-
-		return new Promise((resolve, reject) => {
-			if (names.length === 1) {
-				// Single document removal
-				this.db?.run(
-					deleteDocumentQuery,
-					{
-						$name: names[0],
-					},
-					(error) => {
-						if(error) {
-							reject(error);
-						} else {
-							resolve();
-						}
-					}
-				);
-			} else {
-				// Batch removal using IN clause
-				const placeholders = names.map(() => '?').join(',');
-				const batchDeleteQuery = `DELETE FROM "documents" WHERE name IN (${placeholders})`;
-				
-				this.db?.run(
-					batchDeleteQuery,
-					names,
-					(error) => {
-						if(error) {
-							reject(error);
-						} else {
-							resolve();
-						}
-					}
-				);
-			}
-		});
 	}
 
 	/**
@@ -275,15 +156,3 @@ export class SQLite extends Database {
 		});
 	}
 }
-
-
-// Global sqlite instance because I don't want to pass it around everywhere
-mkdirSync('data', { recursive: true });
-export const sqlite = new SQLite({
-    database: 'data/db.sqlite'
-});
-
-// Clean up expired sessions every hour
-setInterval(() => {
-    sqlite.cleanupExpiredSessions().catch(console.error);
-}, 60 * 60 * 1000);

@@ -11,7 +11,7 @@
 </script>
 
 <script lang="ts">
-  	import { reconnectSocket } from "../stores/sync";
+  	import { reconnectSocket } from "../connection";
 	import { route } from "../stores/router";
 
 	let username = "";

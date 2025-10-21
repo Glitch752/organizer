@@ -1,4 +1,5 @@
 import devtoolsJson from 'vite-plugin-devtools-json';
+import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { execSync } from 'child_process';
@@ -7,7 +8,7 @@ const commitHash = execSync('if [ -d ".git" ]; then git rev-parse --short HEAD; 
 
 // https://vite.dev/config/
 export default defineConfig({
-    plugins: [svelte(), devtoolsJson()],
+    plugins: [svelte(), devtoolsJson(), tsconfigPaths()],
     
     define: {
         '__APP_VERSION__': JSON.stringify(process.env.npm_package_version),

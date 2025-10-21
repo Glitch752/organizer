@@ -1,82 +1,79 @@
-import { Hocuspocus } from "@hocuspocus/server";
+import { configDotenv } from "dotenv";
+
+configDotenv();
 
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
-
-import { YTree } from "@shared/ytree";
-import { YMap } from "@shared/yjsFixes";
-
-import { sqlite } from "./SQLite";
-import { checkAuth, addAuthRoutes } from "./auth";
 import { serveStatic } from "hono/serve-static";
-
 import path from "path";
 import fs from "fs/promises";
-import MockWebsocketHub from "./MockWebsocket";
+import { Backend } from "./Backend";
 
-const hocuspocus = new Hocuspocus({
-    yDocOptions: {
-        gc: true,
-        gcFilter() {
-            return true;
-        },
-    },
+const backend = new Backend();
+
+// const hocuspocus = new Hocuspocus({
+//     yDocOptions: {
+//         gc: true,
+//         gcFilter() {
+//             return true;
+//         },
+//     },
     
-    async onListen() {
-        console.log("Hocuspocus server listening");
-    },
+//     async onListen() {
+//         console.log("Hocuspocus server listening");
+//     },
     
-    async onConnect() {
-        console.log("Client connected")
-    },
+//     async onConnect() {
+//         console.log("Client connected")
+//     },
     
-    async onDisconnect() {
-        console.log("Client disconnected")
-    },
+//     async onDisconnect() {
+//         console.log("Client disconnected")
+//     },
     
-    async onAuthenticate(data) {
-        const username = await checkAuth(data.request.headers);
-        if(!username) {
-            throw new Error("Authentication failed");
-        }
+//     async onAuthenticate(data) {
+//         const username = await checkAuth(data.request.headers);
+//         if(!username) {
+//             throw new Error("Authentication failed");
+//         }
         
-        data.connectionConfig.readOnly = false;
+//         data.connectionConfig.readOnly = false;
         
-        return {
-            user: {
-                name: username
-            }
-        };
-    },
+//         return {
+//             user: {
+//                 name: username
+//             }
+//         };
+//     },
     
-    async onStoreDocument(data) {
-        if(data.documentName === "global") {
-            const tree = new YTree(data.document.getMap("pages") as YMap<any>);
+//     async onStoreDocument(data) {
+//         if(data.documentName === "global") {
+//             const tree = new YTree(data.document.getMap("pages") as YMap<any>);
             
-            const nodes = new Set(tree.getAllNodes().map(n => `doc:${n.id()}`));
-            const docs = new Set(
-                (await sqlite.getDocumentNames())
-                    .filter(n => n.startsWith("doc:"))
-            );
+//             const nodes = new Set(tree.getAllNodes().map(n => `doc:${n.id()}`));
+//             const docs = new Set(
+//                 (await sqlite.getDocumentNames())
+//                     .filter(n => n.startsWith("doc:"))
+//             );
             
-            const deletedDocs = docs.difference(nodes);
-            if(deletedDocs.size === 0) {
-                return;
-            }
+//             const deletedDocs = docs.difference(nodes);
+//             if(deletedDocs.size === 0) {
+//                 return;
+//             }
             
-            console.log(`Cleaning up ${deletedDocs.size} deleted documents: ${[...deletedDocs].join(", ")}`);
+//             console.log(`Cleaning up ${deletedDocs.size} deleted documents: ${[...deletedDocs].join(", ")}`);
             
-            for(const doc of deletedDocs) {
-                hocuspocus.closeConnections(doc);
-                hocuspocus.documents.delete(doc);
-            }
-            sqlite.removeDocument(Array.from(deletedDocs));
-        }
-    },
+//             for(const doc of deletedDocs) {
+//                 hocuspocus.closeConnections(doc);
+//                 hocuspocus.documents.delete(doc);
+//             }
+//             sqlite.removeDocument(Array.from(deletedDocs));
+//         }
+//     },
     
-    extensions: [sqlite],
-});
+//     extensions: [sqlite],
+// });
 
 
 
@@ -84,23 +81,12 @@ const app = new Hono();
 
 const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 app.get("ws", upgradeWebSocket((c) => ({
-    onOpen(_evt, ws) {
-        if(!ws.raw) {
-            throw new Error("WebSocket raw object is missing");
-        }
-
-        const req = {
-            ...c.req.raw,
-            headers: {
-                cookie: c.req.header("cookie") || ""
-            }
-        };
-
-        const hub = new MockWebsocketHub(ws.raw as any);
-        const hocuspocusSocket = hub.createChild("h");
-
-        hocuspocus.handleConnection(hocuspocusSocket, req as any);
-    }
+    async onOpen(_evt, ws) {
+        await backend.handleConnection(ws, c.req.header("cookie") ?? "");
+    },
+    onClose(_evt, ws) {
+        backend.handleDisconnection(ws);
+    },
 })));
 
 // All other paths host the SPA
@@ -146,17 +132,13 @@ app.get('*', serveStatic({
     }
 }));
 
-addAuthRoutes(app);
+backend.addAuthRoutes(app);
 
 const server = serve({
     fetch: app.fetch,
     port: 3000,
-}, (info) => {
-    hocuspocus.hooks('onListen', {
-        instance: hocuspocus,
-        configuration: hocuspocus.configuration,
-        port: info.port
-    });
+}, async (info) => {
+    await backend.onListen(info.port);
 });
 
 injectWebSocket(server);
