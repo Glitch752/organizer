@@ -5,7 +5,6 @@ import type { DocSubscription } from ".";
 export function getDocument(id: string, loadedCallback: (() => void) | null = null): DocSubscription {
     const doc = new Y.Doc();
 
-
     // const localPersistence = new IndexeddbPersistence(id, doc);
     // localPersistence.once("synced", () => {
     //     console.log(`Locally-saved IndexDB content loaded for ${id}`);

@@ -8,11 +8,13 @@ import { Hono } from "hono";
 import { IncomingHttpHeaders } from "http";
 import { PermissionStatus } from "@shared/connection/Permissions";
 import { AUTHENTICATION_FAILED_CODE } from "@shared/connection/Messages";
+import { DataStore } from "./DataStore";
 
 export class Backend {
     private connectedClients: Map<WSContext<WebSocket.WebSocket>, Connection> = new Map();
     private db: SQLite;
     private authService: AuthService;
+    private dataStore: DataStore;
 
     constructor() {
         mkdirSync('data', { recursive: true });
@@ -20,6 +22,7 @@ export class Backend {
             database: 'data/db.sqlite'
         });
         this.authService = new AuthService(this.db);
+        this.dataStore = new DataStore('data');
     }
 
     // Expose auth service methods
