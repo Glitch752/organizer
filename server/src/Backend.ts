@@ -1,7 +1,7 @@
 import { WSContext } from "hono/ws";
 import WebSocket from 'ws';
 import { Connection } from "./Connection";
-import { SQLite } from "./SQLite";
+import { SQLite } from "./database/SQLite";
 import { AuthService } from "./AuthService";
 import { mkdirSync } from "node:fs";
 import { Hono } from "hono";

@@ -13,6 +13,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.12.1",
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.3.0",
     "@types/ws": "^8.18.1",
     "esbuild": "^0.25.9",
@@ -24,10 +25,10 @@
     "@hono/node-ws": "^1.2.0",
     "@hono/zod-validator": "^0.7.2",
     "@organizer/shared": "workspace:shared@*",
+    "better-sqlite3": "^12.4.1",
     "dotenv": "^17.2.1",
     "hono": "^4.9.5",
     "jsondiffpatch": "^0.7.3",
-    "sqlite3": "^5.1.7",
     "zod": "^4.1.5"
   },
   "peerDependencies": {

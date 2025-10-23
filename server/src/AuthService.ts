@@ -4,7 +4,7 @@ import { Hono, HonoRequest } from "hono";
 import z from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { IncomingHttpHeaders } from "http";
-import { SQLite } from "./SQLite";
+import { SQLite } from "./database/SQLite";
 
 interface User {
     username: string;

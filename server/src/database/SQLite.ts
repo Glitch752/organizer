@@ -1,6 +1,12 @@
-import sqlite3 from "sqlite3";
+import Sqlite3 from "better-sqlite3";
 
-const schema = `
+export type SessionID = string & { readonly __session_id: unique symbol };
+
+function sql(strings: TemplateStringsArray, ...values: any[]) {
+	return strings.reduce((acc, str, i) => acc + str + (values[i] ?? ''), '');
+}
+
+const schema = sql`
 CREATE TABLE IF NOT EXISTS "sessions" (
   "session_id" varchar(255) NOT NULL,
   "username" varchar(255) NOT NULL,
@@ -9,20 +15,20 @@ CREATE TABLE IF NOT EXISTS "sessions" (
   UNIQUE(session_id)
 )`;
 
-const insertSessionQuery = `
+const insertSessionQuery = sql`
   INSERT INTO "sessions" ("session_id", "username", "expires_at") VALUES ($session_id, $username, $expires_at)
     ON CONFLICT(session_id) DO UPDATE SET username = $username, expires_at = $expires_at
 `;
 
-const selectSessionQuery = `
+const selectSessionQuery = sql`
   SELECT username FROM "sessions" WHERE session_id = $session_id AND (expires_at IS NULL OR expires_at > datetime('now'))
 `;
 
-const deleteSessionQuery = `
+const deleteSessionQuery = sql`
   DELETE FROM "sessions" WHERE session_id = $session_id
 `;
 
-const cleanupExpiredSessionsQuery = `
+const cleanupExpiredSessionsQuery = sql`
   DELETE FROM "sessions" WHERE expires_at IS NOT NULL AND expires_at <= datetime('now')
 `;
 
@@ -44,7 +50,7 @@ export interface SQLiteConfiguration {
 }
 
 export class SQLite {
-	db?: sqlite3.Database;
+	db?: Sqlite3.Database;
 
 	configuration: SQLiteConfiguration = {
 		database: SQLITE_INMEMORY,
@@ -56,103 +62,59 @@ export class SQLite {
 			...this.configuration,
 			...configuration,
 		};
+
+		// Periodically clean up expired sessions
+		setInterval(() => {
+			this.cleanupExpiredSessions();
+		}, 60 * 60 * 1000);
 	}
 
-	async initialize() {
-		this.db = new sqlite3.Database(this.configuration.database);
+	public initialize() {
+		this.db = new Sqlite3(this.configuration.database);
+		this.db.pragma('journal_mode = WAL'); // Dramatically improves performance
+
 		// Split the schema by semicolons and run each statement
         // Not perfect, but it works for us
 		const statements = this.configuration.schema.split(';').map(s => s.trim()).filter(Boolean);
 		for(const stmt of statements) {
-			await new Promise((resolve, reject) => {
-				this.db!.run(stmt, (err) => {
-					if(err) reject(err);
-					else resolve(undefined);
-				});
-			});
+			this.db.exec(stmt);
 		}
 	}
 
 	/**
 	 * Create a new session or update an existing one
 	 */
-	async createSession(sessionId: string, username: string, expiresAt?: Date): Promise<void> {
-		return new Promise((resolve, reject) => {
-			this.db?.run(
-				insertSessionQuery,
-				{
-					$session_id: sessionId,
-					$username: username,
-					$expires_at: expiresAt ? expiresAt.toISOString() : null,
-				},
-				(error) => {
-					if(error) {
-						reject(error);
-					} else {
-						resolve();
-					}
-				}
-			);
+	public createSession(sessionId: SessionID, username: string, expiresAt?: Date): void {
+		this.db?.prepare(insertSessionQuery).run({
+			session_id: sessionId,
+			username: username,
+			expires_at: expiresAt ? expiresAt.toISOString() : null,
 		});
 	}
 
 	/**
 	 * Get the username for a session if it exists and hasn't expired
 	 */
-	async getSession(sessionId: string): Promise<string | undefined> {
-		return new Promise((resolve, reject) => {
-			this.db?.get(
-				selectSessionQuery,
-				{
-					$session_id: sessionId,
-				},
-				(error, row) => {
-					if (error) {
-						reject(error);
-					} else {
-						resolve((row as any)?.username);
-					}
-				}
-			);
-		});
+	public getSession(sessionId: string): SessionID | undefined {
+		const row = this.db?.prepare(selectSessionQuery).get({
+			session_id: sessionId,
+		}) as { username: string } | undefined;
+		return row ? (row.username as SessionID) : undefined;
 	}
 
 	/**
 	 * Delete a session
 	 */
-	async deleteSession(sessionId: string): Promise<void> {
-		return new Promise((resolve, reject) => {
-			this.db?.run(
-				deleteSessionQuery,
-				{
-					$session_id: sessionId,
-				},
-				(error) => {
-					if(error) {
-						reject(error);
-					} else {
-						resolve();
-					}
-				}
-			);
+	public deleteSession(sessionId: SessionID): void {
+		this.db?.prepare(deleteSessionQuery).run({
+			session_id: sessionId,
 		});
 	}
 
 	/**
-	 * Clean up expired sessions
+	 * Clean up expired sessions. Run periodically to avoid the session table growing indefinitely.
 	 */
-	async cleanupExpiredSessions(): Promise<void> {
-		return new Promise((resolve, reject) => {
-			this.db?.run(
-				cleanupExpiredSessionsQuery,
-				(error) => {
-					if(error) {
-						reject(error);
-					} else {
-						resolve();
-					}
-				}
-			);
-		});
+	private cleanupExpiredSessions(): void {
+		this.db?.prepare(cleanupExpiredSessionsQuery).run();
 	}
 }
