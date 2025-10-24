@@ -1,8 +1,12 @@
 import { Awareness } from "y-protocols/awareness.js";
 import * as Y from "yjs";
 import type { DocSubscription } from ".";
+import type { YDoc, YDocType } from "@shared/typedYjs";
 
-export function getDocument(id: string, loadedCallback: (() => void) | null = null): DocSubscription {
+export function getDocument<DocType extends YDocType>(
+    id: string,
+    loadedCallback: (() => void) | null = null
+): DocSubscription<DocType> {
     const doc = new Y.Doc();
 
     // const localPersistence = new IndexeddbPersistence(id, doc);
@@ -32,7 +36,7 @@ export function getDocument(id: string, loadedCallback: (() => void) | null = nu
     //     console.log(`Remote provider status for ${id}: ${e.status}`);
     // });
     return {
-        doc,
+        doc: doc as YDoc<DocType>,
         // awareness: remoteProvider.awareness!,
         // disconnect() {
         //     remoteProvider.detach();

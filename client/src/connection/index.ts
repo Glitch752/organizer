@@ -1,15 +1,15 @@
-import * as Y from "yjs";
 import { Awareness } from "y-protocols/awareness";
 import { route } from "../stores/router";
 import { PermissionStatus } from "@shared/connection/Permissions";
 import { AUTHENTICATION_FAILED_CODE, type ServerToClientMessage } from "@shared/connection/Messages";
 import { writable } from "svelte/store";
+import type { YDoc, YDocType } from "@shared/typedYjs";
 
 const websocketURL = `ws${location.protocol === "https:" ? "s" : ""}://${location.host}/ws`;
 console.log(`Websocket URL: ${websocketURL}`);
 
-export type DocSubscription = {
-    doc: Y.Doc,
+export type DocSubscription<DocType extends YDocType> = {
+    doc: YDoc<DocType>,
     awareness: Awareness,
     disconnect(): void
 };

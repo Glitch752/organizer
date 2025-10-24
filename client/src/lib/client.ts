@@ -7,7 +7,7 @@ import type { EditorView } from "codemirror";
 import { SelectionCRDT } from "./selection";
 import { YTree, type TreeJsonStructure } from "../../../shared/ytree";
 import { writable, type Writable } from "svelte/store";
-import type { YArray, YMap } from "../../../shared/yjsFixes";
+import type { YArray, YElementType, YMap } from "../../../shared/typedYjs";
 import type { Attribute } from "./attributes";
 import { v4 as uuidv4 } from "uuid";
 import { route } from "../stores/router";
@@ -69,7 +69,9 @@ export class Client {
 
     public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages") as YMap<any>);
 
-    private attributesMap: YMap<YArray<Attribute>> = this.workspaceDocument.doc.getMap("attributes") as YMap<YArray<Attribute>>;
+    private attributesMap = this.workspaceDocument.doc.getMap("attributes") as YMap<{
+        [key: string]: YArray<Attribute[]>
+    }>;
     
     public immutablePageTreeView = writable(this.pageTree.toJsonStructure());
 

@@ -1,6 +1,6 @@
 import * as Y from "yjs";
 import { RadixPriorityQueueBuilder } from "./radixpq";
-import type { YMap } from "./yjsFixes";
+import type { YMap } from "./typedYjs";
 
 // Adapted from y-sweet examples:
 // https://github.com/jamsocket/y-sweet/blob/main/examples/nextjs/src/app/(demos)/tree-crdt/ytree.ts
