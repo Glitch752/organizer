@@ -1,13 +1,15 @@
 import { Awareness } from "y-protocols/awareness.js";
 import * as Y from "yjs";
 import type { DocSubscription } from ".";
-import type { YDoc, YDocType } from "@shared/typedYjs";
+import type { YDoc, YDocSchema } from "@shared/typedYjs";
 
-export function getDocument<DocType extends YDocType>(
+export function getDocument<DocType extends YDocSchema>(
     id: string,
     loadedCallback: (() => void) | null = null
 ): DocSubscription<DocType> {
-    const doc = new Y.Doc();
+    const doc = new Y.Doc() as unknown as YDoc<DocType>;
+
+    
 
     // const localPersistence = new IndexeddbPersistence(id, doc);
     // localPersistence.once("synced", () => {
@@ -44,7 +46,7 @@ export function getDocument<DocType extends YDocType>(
         //     // localPersistence.destroy();
         //     doc.destroy();
         // }
-        awareness: new Awareness(doc),
+        awareness: new Awareness(doc as unknown as Y.Doc),
         disconnect() {
         }
     };

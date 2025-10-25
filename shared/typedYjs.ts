@@ -1,73 +1,117 @@
 import * as Y from 'yjs';
 
-export type YElementType = 
-    | string
-    | number
-    | boolean
-    | YMap<YMapType>
-    | YArray<YArrayType>
-    | {
-        [key: string]: YElementType
-    } | YElementType[];
+// Based primarily on https://gist.github.com/BitPhinix/a98b5f35a0be9cd8700103c8fd406d4d
+// with modifications for our use case
 
-export type YMapType = {
-    [key: string]: YElementType;
-} & { readonly __brand?: 'YMapType' };
+export type YType = YMap<any> | YArray<any> | Y.Text;
 
-export type YArrayType = YElementType[] & { readonly __brand?: 'YArrayType' };
+export type Json = JsonScalar | JsonArray | JsonObject;
+export type JsonScalar = string | number | boolean | null;
+export type JsonArray = Json[];
+export type JsonObject = { [key: string]: Json | undefined };
 
-export type YDocType = {
-    [key: string]: YMap<YMapType> | YArray<YArrayType> | string;
-} & { readonly __brand?: 'YDocType' };
+type Value = YType | Json;
 
-type Jsonify<T extends YElementType> =
-    T extends string | number | boolean ? T :
-    T extends YMap<infer U> ? { [K in keyof U]: Jsonify<U[K]> } :
-    T extends YArray<infer V> ? Jsonify<V[number]>[] :
-    never;
+export type YTypeConstructor<T extends YType> =
+    new () => T extends YMap<any> ? YMap<any> : YArray<any>;
 
-const test: YMap<{
-    [key: string]: YArray<{
-        asdf: string    
-    }[]>
-}> = {} as any;
+type KeysThatExtend<T, V> = keyof {
+    [K in keyof T as T[K] extends V ? K : never]: T[K];
+};
+type EntryType<T extends Record<string, unknown>> = {
+    [key in keyof T]: [key, T[key]];
+}[keyof T];
+type OptionalKeys<T> = {
+    [K in keyof T]-?: undefined extends T[K] ? K : never;
+}[keyof T];
+
+type ToJsonValue<T extends Value> = T extends YType ? undefined : T;
+type MapJsonValue<TData extends Record<string, Value>> = {
+  [K in keyof TData]: ToJsonValue<TData[K]>;
+};
+
+export type ToJson<T extends Value> = T extends YMap<infer TData>
+  ? {
+        [K in keyof TData as K extends Json ? K : never]: ToJsonValue<TData[K]>;
+    }
+  : T extends YArray<infer TData>
+  ? (TData extends Json ? TData : never)[]
+  : T extends Json
+  ? T
+  : never;
+export type ToJsonDeep<T extends Value> = T extends YArray<infer TValue>
+  ? ToJsonDeep<TValue>
+  : T extends YMap<infer TData>
+  ? {
+      [K in keyof TData]: ToJsonDeep<TData[K]>;
+    }
+  : T extends Json
+  ? T
+  : never;
+
+export type YDocSchema = Record<string, YType>;
+
+type YDocTypings<T extends YDocSchema> = {
+    get<TKey extends keyof T, TValue extends T[TKey]>(
+        key: TKey,
+        typeConstructor: YTypeConstructor<TValue>
+    ): T[TKey];
+    get<TKey extends keyof T>(key: TKey): T[TKey] | undefined;
+    getMap<TKey extends KeysThatExtend<T, YType>>(
+        key: TKey,
+    ): T[TKey] extends YMap<infer U> ? YMap<U> : never;
+    getArray<TKey extends KeysThatExtend<T, YType>>(
+        key: TKey,
+    ): T[TKey] extends YArray<infer U> ? YArray<U> : never;
+};
 
 /**
- * Extended YDoc interface that has better typing than the normal Y.Doc interface.
+ * Extended YDoc interface with better typing.
  */
-export interface YDoc<T extends YDocType> {
-    getArray<K extends keyof T>(name: K): T[K] extends YArray<YArrayType> ? T[K] : never;
-    getMap<K extends keyof T>(name: K): T[K] extends YMap<YMapType> ? T[K] : never;
-    getText<K extends keyof T>(name: K): T[K] extends string ? T[K] : never;
-}
+export type YDoc<T extends YDocSchema> = Omit<Y.Doc, keyof YDocTypings<T>> & YDocTypings<T>;
+export const YDoc = Y.Doc as new <T extends YDocSchema>() => YDoc<T>;
 
-/**
- * Extended YMap interface that includes observer methods that exist at runtime
- * but are missing from the TypeScript definitions (for some reason).
- * Also has better typing than the normal Y.Map<K, V> interface.
- */
-export interface YMap<T extends YMapType> {
+type YMapTypings<T extends Record<string, Value>> = {
     doc: Y.Doc;
     
     observe(f: (event: Y.YMapEvent<T[keyof T]>, transaction: Y.Transaction) => void): void;
     unobserve(f: (event: Y.YMapEvent<T[keyof T]>, transaction: Y.Transaction) => void): void;
     observeDeep(f: (events: Array<Y.YEvent<any>>, transaction: Y.Transaction) => void): void;
     unobserveDeep(f: (events: Array<Y.YEvent<any>>, transaction: Y.Transaction) => void): void;
+    
+    clone(): YMap<T>;
+    toJSON(): MapJsonValue<T>;
 
-    get<K extends keyof T>(key: K): T[K];
-    set<K extends keyof T>(key: K, value: T[K]): void;
-    has<K extends keyof T>(key: K): boolean;
-    delete<K extends keyof T>(key: K): void;
+    keys(): IterableIterator<keyof T>;
+    values(): IterableIterator<T[keyof T]>;
+    entries(): IterableIterator<EntryType<T>>;
+    forEach(fn: (
+        key: keyof T,
+        value: T[keyof T],
+        self: YMap<T>,
+    ) => void): void;
+    [Symbol.iterator](): IterableIterator<EntryType<T>>;
 
-    toJSON(): { [K in keyof T]: Jsonify<T[K]> };
-}
+    delete(key: OptionalKeys<T>): void;
+    set<TKey extends keyof T, TValue extends T[TKey]>(
+        key: TKey,
+        value: TValue,
+    ): TValue;
+    get<TKey extends keyof T>(key: TKey): T[TKey];
+    has<TKey extends keyof T>(key: TKey): boolean;
+};
 
 /**
- * Extended YArray interface that includes observer methods that exist at runtime
+ * Extended YMap interface that includes observer methods that exist at runtime
  * but are missing from the TypeScript definitions (for some reason).
- * Also has better typing than the normal Y.Array<T> interface.
+ * Also has better typing than the normal Y.Map<K, V> interface.
  */
-export interface YArray<T extends YArrayType> {
+export type YMap<T extends Record<string, Value>> = Omit<Y.Map<T>, keyof YMapTypings<T>> & YMapTypings<T>;
+export const YMap = Y.Map as new <T extends Record<string, Value>>(
+    entries?: [keyof T, T[keyof T]][],
+) => YMap<T>;
+
+type YArrayTypings<T extends Value> = {
     doc: Y.Doc;
     
     observe(f: (event: Y.YArrayEvent<any>, transaction: Y.Transaction) => void): void;
@@ -75,10 +119,18 @@ export interface YArray<T extends YArrayType> {
     observeDeep(f: (events: Array<Y.YEvent<any>>, transaction: Y.Transaction) => void): void;
     unobserveDeep(f: (events: Array<Y.YEvent<any>>, transaction: Y.Transaction) => void): void;
 
-    get(index: number): T[number];
-    insert(index: number, content: T[number][]): void;
-    push(content: T[number][]): void;
-    delete(index: number, length?: number): void;
+    toJSON(): ToJson<T>[];
 
-    toJSON(): Jsonify<T[number]>[];
-}
+    get(index: number): T | undefined;
+    insert(index: number, content: T[]): void;
+    delete(index: number, length?: number): void;
+    push(content: T[]): void;
+};
+
+/**
+ * Extended YArray interface that includes observer methods that exist at runtime
+ * but are missing from the TypeScript definitions (for some reason).
+ * Also has better typing than the normal Y.Array<T> interface.
+ */
+export type YArray<T extends Value> = Omit<Y.Array<T>, keyof YArrayTypings<T>> & YArrayTypings<T>;
+export const YArray = Y.Array as new <T extends Value>(entries?: T[]) => YArray<T>;
