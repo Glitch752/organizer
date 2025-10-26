@@ -6,13 +6,14 @@ import { SelectionCRDT } from "./selection";
 import { YTree, type TreeJsonStructure } from "../../../shared/ytree";
 import { writable, type Writable } from "svelte/store";
 import type { YArray, YMap } from "../../../shared/typedYjs";
-import type { Attribute } from "./attributes";
+import type { Attribute } from "../../../shared/connection/attributes";
 import { v4 as uuidv4 } from "uuid";
 import { route } from "../stores/router";
 import { isMobile } from "./util/device.svelte";
 import type { SyncedDocument } from "../connection/document";
 import { getSyncedDocument } from "../connection";
-import type { WorkspaceSchema } from "@shared/connection/Workspace";
+import type { PageMeta, WorkspaceSchema } from "@shared/connection/Workspace";
+import { type DocumentSchema } from "@shared/connection/Document";
 
 type UserColor = {
     color: string,
@@ -38,10 +39,6 @@ export type EditorInfo = {
     editorView: EditorView | null
 };
 
-export type PageMeta = {
-    name: string,
-    collapsed?: boolean
-};
 export type PageType = TreeJsonStructure<PageMeta>;
 
 export class Client {
@@ -69,10 +66,7 @@ export class Client {
     });
 
     public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages"));
-
-    private attributesMap = this.workspaceDocument.doc.getMap("attributes") as YMap<{
-        [key: string]: YArray<Attribute[]>
-    }>;
+    private attributesMap = this.workspaceDocument.doc.getMap("attributes");
     
     public immutablePageTreeView = writable(this.pageTree.toJsonStructure());
 
@@ -96,7 +90,7 @@ export class Client {
         if(!this.workspaceLoaded) return null;
         
         if(!this.attributesMap.has(this.activePage.id)) {
-            this.attributesMap.set(this.activePage.id, new Y.Array<Attribute>() as YArray<Attribute>);
+            this.attributesMap.set(this.activePage.id, new Y.Array<Attribute>() as unknown as YArray<Attribute>);
         }
 
         return this.attributesMap.get(this.activePage?.id)!;
@@ -199,13 +193,13 @@ export class Client {
 
     public loadPage(id: string, onLoad?: (() => void)): EditorInfo {
         if(this.activePage !== null) {
-            this.activePage.sub.disconnect();
+            this.activePage.sub.release();
             this.activePage.undoManager.destroy();
 
             this.activePage = null;
         }
 
-        const doc = getDocument(`doc:${id}`, onLoad);
+        const doc = getSyncedDocument<DocumentSchema>(`doc:${id}`, onLoad);
         const yText = doc.doc.getText("content");
         const undoManager = new Y.UndoManager(yText);
 

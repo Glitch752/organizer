@@ -1,8 +1,9 @@
 <script lang="ts">
     import CalendarDatePicker from "./calendarDatePicker/CalendarDatePicker.svelte";
     import { parseFuzzyDate } from "./fuzzyDate";
-    import { makePlainDate, parsePlainDate, type PlainDateString } from "./time";
+    import { makePlainDate, parsePlainDate } from "./time";
     import PopupButton from "../PopupButton.svelte";
+    import type { PlainDateString } from "@shared/datetime";
 
     let { value = $bindable(), onchange }: {
         value: PlainDateString,

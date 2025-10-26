@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { AttributeType, attributeTypes, type Attribute } from ".";
-  import DateTimeInput from "../datetime/DateTimeInput.svelte";
+    import { AttributeType, type Attribute } from "@shared/connection/attributes";
+    import { attributeTypes } from ".";
+    import DateTimeInput from "../datetime/DateTimeInput.svelte";
     import CalendarEventTimes from "./CalendarEventTimes.svelte";
 
     const { data = $bindable(), onchange: changeHandler, onremove }: {

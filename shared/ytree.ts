@@ -1,6 +1,6 @@
 import * as Y from "yjs";
 import { RadixPriorityQueueBuilder } from "./radixpq";
-import type { YMap, YValue } from "./typedYjs";
+import type { ToJson, YMap, YValue } from "./typedYjs";
 
 // Adapted from y-sweet examples:
 // https://github.com/jamsocket/y-sweet/blob/main/examples/nextjs/src/app/(demos)/tree-crdt/ytree.ts
@@ -10,23 +10,15 @@ const PARENT_KEY = "parent";
 
 type NodeRelations = { parent: string | null; children: Set<string> };
 
-type JsonNode = {
-    parent: {
-        [key: string]: number;
-    };
-    [key: string]: any;
-};
-
-type JsonMap = {
-    [key: string]: JsonNode;
-};
-
+// I might vomit if I need to look at this TS garbage for much longer
+export type YTreeNodeID = string;
+export type YTreeNodeData<T extends Record<string, YValue>> = YMap<{
+    [PARENT_KEY]: YMap<{
+        [parentId: string]: number;
+    }>;
+} & T>;
 export type YTreeContent<T extends Record<string, YValue>> = YMap<{
-    [id: string]: YMap<{
-        [PARENT_KEY]: YMap<{
-            [key: string]: number;
-        }>;
-    } & T>
+    [id: YTreeNodeID]: YTreeNodeData<T>
 }>;
 
 export type TreeJsonStructure<T extends object> = {
@@ -35,7 +27,7 @@ export type TreeJsonStructure<T extends object> = {
     children: TreeJsonStructure<T>[]
 };
 
-export class YTree<T extends object> {
+export class YTree<T extends Record<string, YValue>> {
     /**
      * A map from parent id to child node IDs. The root node has a null parent id.
      */
@@ -54,10 +46,10 @@ export class YTree<T extends object> {
      * - parent: YMap<string, number> - a map from parent ID to clock value
      * - value: any - the value of the node
      */
-    public map: YTreeContent;
+    public map: YTreeContent<T>;
 
-    constructor(map: YTreeContent) {
-        this.map = map as YTreeContent;
+    constructor(map: YTreeContent<T>) {
+        this.map = map as YTreeContent<T>;
         this.map.observeDeep((e, t) => {
             this.updateChildren();
         });
@@ -123,7 +115,7 @@ export class YTree<T extends object> {
      * Build a tree structure from a JSON representation of the YMap.
      * @returns 
      */
-    private static buildTree(map: JsonMap): [Map<string, NodeRelations>, number] {
+    private static buildTree(map: ToJson<YTreeNodeData<any>>): [Map<string, NodeRelations>, number] {
         let maxClock = 0;
 
         // First, create a map of all nodes to the potential children that have them as a top-priority parent.
@@ -209,7 +201,7 @@ export class YTree<T extends object> {
     }
 }
 
-export class YTreeNode<T extends object> {
+export class YTreeNode<T extends Record<string, YValue>> {
     constructor(private _id: string, public tree: YTree<T>) { }
 
     /**
@@ -239,22 +231,26 @@ export class YTreeNode<T extends object> {
     /**
      * Get the a specific value on this node.
      */
-    public get<K extends keyof T & string>(key: K): T[K] | undefined {
+    public get<K extends keyof T>(key: K): T[K] | undefined {
         return this.tree.map.get(this._id)!.get(key);
     }
 
     /**
      * Set a value on this node.
      */
-    public set<K extends keyof T & string>(key: K, value: T[K]) {
-        this.tree.map.get(this._id)!.set(key, value);
+    public set<K extends keyof T>(key: K, value: T[K]) {
+        if(key === PARENT_KEY) {
+            console.error(`Can't set reserved key '${PARENT_KEY}' on tree node.`);
+            return;
+        }
+        this.tree.map.get(this._id)!.set(key, value as any);
     }
 
     /**
      * Get the underlying map for this node.  
      * Note that this map has internal state used to manage the tree structure.
      */
-    public get map(): YMap<any> {
+    public get map(): YTreeNodeData<T> {
         return this.tree.map.get(this._id)!;
     }
 

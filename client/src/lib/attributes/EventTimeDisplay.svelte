@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { TimeType, timeTypes, type EventTime } from ".";
+    import { TimeType, type EventTime } from "@shared/connection/attributes";
+    import { timeTypes } from ".";
     import DateInput from "../datetime/DateInput.svelte";
     import DateTimeInput from "../datetime/DateTimeInput.svelte";
     import TimeInput from "../datetime/TimeInput.svelte";

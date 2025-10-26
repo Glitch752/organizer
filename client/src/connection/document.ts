@@ -62,11 +62,19 @@ export class SyncedDocument<DocType extends YDocSchema>{
     }
 
     private connect() {
-        
+        console.log(`Connecting to document ${this.id}`);
+        this.status = SyncStatus.Connecting;
+
+        this.socket.connectToDocument(this);
     }
     
     private disconnect() {
+        console.log(`Disconnecting from document ${this.id}`);
+        this.status = SyncStatus.Disconnected;
+
         this.awareness.destroy();
         this.doc.destroy();
+
+        this.socket.disconnectFromDocument(this);
     }
 }

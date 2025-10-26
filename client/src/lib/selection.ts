@@ -2,18 +2,13 @@ import { EditorSelection, StateEffect } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import * as Y from "yjs";
 import { debounce } from "./util/time";
-
-type ScrollTargetInfo = {
-    cursorPos: number,
-    y: number,
-    x: number
-};
+import type { ScrollTargetInfo, SelectionCRDTSchema } from "@shared/connection/Document";
 
 export class SelectionCRDT {
     latestSelection: any;
     latestScrollSnapshot: ScrollTargetInfo = { cursorPos: 0, y: 0, x: 0 };
 
-    constructor(private map: Y.Map<any>) {
+    constructor(private map: SelectionCRDTSchema) {
     }
 
     get selection(): EditorSelection {
@@ -41,7 +36,7 @@ export class SelectionCRDT {
         }
 
         // HACK
-        const { cursorPos, y, x } = snapshot as ScrollTargetInfo;
+        const { cursorPos, y, x } = snapshot;
         const dummySnapshot = editor.scrollSnapshot();
         // @ts-ignore The less you think about it, the better.
         dummySnapshot.value.range = EditorSelection.cursor(cursorPos);

@@ -2,6 +2,7 @@
 
 import type { ServerToClientMessage } from "@shared/connection/Messages";
 import { EventEmitter } from "../lib/util/EventEmitter";
+import type { SyncedDocument } from "./document";
 
 type ServerSocketEvents = {
     open: void;
@@ -50,5 +51,13 @@ export class ServerSocket extends EventEmitter<ServerSocketEvents> {
             }, { once: true });
             this.ws.addEventListener("error", reject, { once: true });
         });
+    }
+
+    public connectToDocument(doc: SyncedDocument<any>) {
+        
+    }
+
+    public disconnectFromDocument(doc: SyncedDocument<any>) {
+
     }
 }

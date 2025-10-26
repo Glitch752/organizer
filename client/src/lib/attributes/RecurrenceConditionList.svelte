@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { EventConditionType, type EventCondition } from ".";
+    import { EventConditionType, type EventCondition } from "@shared/connection/attributes";
     import RecurrenceCondition from "./RecurrenceCondition.svelte";
 
     let { conditions = $bindable(), lastSeparator, onchange }: {

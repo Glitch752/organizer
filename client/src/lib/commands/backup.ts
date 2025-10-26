@@ -1,12 +1,14 @@
-import type { Client, PageMeta } from "../client";
+import type { Client } from "../client";
 import JSZip from "jszip";
 import { type YTreeNode } from "../../../../shared/ytree";
-import { type DocSubscription } from "../../connection";
-import { getDocument } from "../../connection/document";
+import type { SyncedDocument } from "../../connection/document";
+import type { PageMeta } from "@shared/connection/Workspace";
+import { getSyncedDocument } from "../../connection";
+import type { DocumentSchema } from "@shared/connection/Document";
 
 async function addPages(zip: JSZip, node: YTreeNode<PageMeta>, client: Client) {
-    const doc = await new Promise<DocSubscription>((resolve) => {
-        const val = getDocument(`doc:${node.id()}`, () => {
+    const doc = await new Promise<SyncedDocument<DocumentSchema>>((resolve) => {
+        const val = getSyncedDocument<DocumentSchema>(`doc:${node.id()}`, () => {
             resolve(val);
         });
     });
@@ -20,7 +22,7 @@ async function addPages(zip: JSZip, node: YTreeNode<PageMeta>, client: Client) {
     zip.file(pageName + ".json", JSON.stringify(info, null, 2), { binary: false });
     zip.file(pageName + ".md", doc.doc.getText("content").toString() || "", { binary: false });
 
-    doc.disconnect();
+    doc.release();
 
     // TODO: Attributes and other data
 

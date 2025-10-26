@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { conditionTypes, EventConditionType, type EventCondition } from ".";
+    import { EventConditionType, type EventCondition } from "@shared/connection/attributes";
+    import { conditionTypes } from ".";
     import DateInput from "../datetime/DateInput.svelte";
     import DateListInput from "../datetime/DateListInput.svelte";
     import DayOfYearListInput from "../datetime/DayOfYearListInput.svelte";

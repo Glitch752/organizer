@@ -1,8 +1,8 @@
 import { Temporal } from "@js-temporal/polyfill";
 import type { Client } from "../client";
-import { AttributeType, EventConditionType, TimeType, type EventCondition, type EventTime } from "../attributes";
+import { AttributeType, EventConditionType, TimeType, type EventCondition, type EventTime } from "@shared/connection/attributes";
 import { getWeekOfMonth, parsePlainDate, parsePlainMonthDay, parseZonedDateTime, parseZonedTimeForDate } from "../datetime/time";
-import type { HexString } from "../attributes/color";
+import type { HexString } from "@shared/connection/attributes/color";
 
 export type CalendarObject = ({
     type: "deadline";

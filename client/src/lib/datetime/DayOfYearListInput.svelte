@@ -1,8 +1,8 @@
 <script lang="ts">
     import { Temporal } from "@js-temporal/polyfill";
-    import type { PlainMonthDayString } from "./time";
     import { makePlainMonthDay } from "./time";
     import DayOfYearInput from "./DayOfYearInput.svelte";
+    import type { PlainMonthDayString } from "@shared/datetime";
 
     let { days = $bindable(), onchange }: {
         days: PlainMonthDayString[],
