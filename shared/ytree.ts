@@ -1,6 +1,6 @@
 import * as Y from "yjs";
 import { RadixPriorityQueueBuilder } from "./radixpq";
-import type { YMap } from "./typedYjs";
+import type { YMap, YValue } from "./typedYjs";
 
 // Adapted from y-sweet examples:
 // https://github.com/jamsocket/y-sweet/blob/main/examples/nextjs/src/app/(demos)/tree-crdt/ytree.ts
@@ -20,6 +20,14 @@ type JsonNode = {
 type JsonMap = {
     [key: string]: JsonNode;
 };
+
+export type YTreeContent<T extends Record<string, YValue>> = YMap<{
+    [id: string]: YMap<{
+        [PARENT_KEY]: YMap<{
+            [key: string]: number;
+        }>;
+    } & T>
+}>;
 
 export type TreeJsonStructure<T extends object> = {
     id: string;
@@ -46,10 +54,10 @@ export class YTree<T extends object> {
      * - parent: YMap<string, number> - a map from parent ID to clock value
      * - value: any - the value of the node
      */
-    public map: YMap<YMap<any>>;
+    public map: YTreeContent;
 
-    constructor(map: YMap<YMap<any>>) {
-        this.map = map as YMap<YMap<any>>;
+    constructor(map: YTreeContent) {
+        this.map = map as YTreeContent;
         this.map.observeDeep((e, t) => {
             this.updateChildren();
         });

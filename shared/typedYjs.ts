@@ -3,14 +3,14 @@ import * as Y from 'yjs';
 // Based primarily on https://gist.github.com/BitPhinix/a98b5f35a0be9cd8700103c8fd406d4d
 // with modifications for our use case
 
-export type YType = YMap<any> | YArray<any> | Y.Text;
+export type YType = YMap<Record<string, any>> | YArray<any> | Y.Text;
 
 export type Json = JsonScalar | JsonArray | JsonObject;
 export type JsonScalar = string | number | boolean | null;
 export type JsonArray = Json[];
 export type JsonObject = { [key: string]: Json | undefined };
 
-type Value = YType | Json;
+export type YValue = YType | Json;
 
 export type YTypeConstructor<T extends YType> =
     new () => T extends YMap<any> ? YMap<any> : YArray<any>;
@@ -25,12 +25,12 @@ type OptionalKeys<T> = {
     [K in keyof T]-?: undefined extends T[K] ? K : never;
 }[keyof T];
 
-type ToJsonValue<T extends Value> = T extends YType ? undefined : T;
-type MapJsonValue<TData extends Record<string, Value>> = {
+type ToJsonValue<T extends YValue> = T extends YType ? undefined : T;
+type MapJsonValue<TData extends Record<string, YValue>> = {
   [K in keyof TData]: ToJsonValue<TData[K]>;
 };
 
-export type ToJson<T extends Value> = T extends YMap<infer TData>
+export type ToJson<T extends YValue> = T extends YMap<infer TData>
   ? {
         [K in keyof TData as K extends Json ? K : never]: ToJsonValue<TData[K]>;
     }
@@ -39,7 +39,7 @@ export type ToJson<T extends Value> = T extends YMap<infer TData>
   : T extends Json
   ? T
   : never;
-export type ToJsonDeep<T extends Value> = T extends YArray<infer TValue>
+export type ToJsonDeep<T extends YValue> = T extends YArray<infer TValue>
   ? ToJsonDeep<TValue>
   : T extends YMap<infer TData>
   ? {
@@ -71,7 +71,7 @@ type YDocTypings<T extends YDocSchema> = {
 export type YDoc<T extends YDocSchema> = Omit<Y.Doc, keyof YDocTypings<T>> & YDocTypings<T>;
 export const YDoc = Y.Doc as new <T extends YDocSchema>() => YDoc<T>;
 
-type YMapTypings<T extends Record<string, Value>> = {
+type YMapTypings<T extends Record<string, YValue>> = {
     doc: Y.Doc;
     
     observe(f: (event: Y.YMapEvent<T[keyof T]>, transaction: Y.Transaction) => void): void;
@@ -82,15 +82,15 @@ type YMapTypings<T extends Record<string, Value>> = {
     clone(): YMap<T>;
     toJSON(): MapJsonValue<T>;
 
-    keys(): IterableIterator<keyof T>;
-    values(): IterableIterator<T[keyof T]>;
-    entries(): IterableIterator<EntryType<T>>;
-    forEach(fn: (
-        key: keyof T,
-        value: T[keyof T],
-        self: YMap<T>,
-    ) => void): void;
-    [Symbol.iterator](): IterableIterator<EntryType<T>>;
+    // keys(): IterableIterator<keyof T>;
+    // values(): IterableIterator<T[keyof T]>;
+    // entries(): IterableIterator<EntryType<T>>;
+    // forEach(fn: (
+    //     key: keyof T,
+    //     value: T[keyof T],
+    //     self: YMap<T>,
+    // ) => void): void;
+    // [Symbol.iterator](): IterableIterator<EntryType<T>>;
 
     delete(key: OptionalKeys<T>): void;
     set<TKey extends keyof T, TValue extends T[TKey]>(
@@ -106,12 +106,12 @@ type YMapTypings<T extends Record<string, Value>> = {
  * but are missing from the TypeScript definitions (for some reason).
  * Also has better typing than the normal Y.Map<K, V> interface.
  */
-export type YMap<T extends Record<string, Value>> = Omit<Y.Map<T>, keyof YMapTypings<T>> & YMapTypings<T>;
-export const YMap = Y.Map as new <T extends Record<string, Value>>(
+export type YMap<T extends Record<string, YValue>> = Omit<Y.Map<T>, keyof YMapTypings<T>> & YMapTypings<T>;
+export const YMap = Y.Map as new <T extends Record<string, YValue>>(
     entries?: [keyof T, T[keyof T]][],
 ) => YMap<T>;
 
-type YArrayTypings<T extends Value> = {
+type YArrayTypings<T extends YValue> = {
     doc: Y.Doc;
     
     observe(f: (event: Y.YArrayEvent<any>, transaction: Y.Transaction) => void): void;
@@ -132,5 +132,5 @@ type YArrayTypings<T extends Value> = {
  * but are missing from the TypeScript definitions (for some reason).
  * Also has better typing than the normal Y.Array<T> interface.
  */
-export type YArray<T extends Value> = Omit<Y.Array<T>, keyof YArrayTypings<T>> & YArrayTypings<T>;
-export const YArray = Y.Array as new <T extends Value>(entries?: T[]) => YArray<T>;
+export type YArray<T extends YValue> = Omit<Y.Array<T>, keyof YArrayTypings<T>> & YArrayTypings<T>;
+export const YArray = Y.Array as new <T extends YValue>(entries?: T[]) => YArray<T>;

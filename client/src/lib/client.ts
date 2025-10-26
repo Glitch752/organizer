@@ -1,5 +1,3 @@
-import { type DocSubscription } from "../connection";
-import { getDocument } from "../connection/document";
 import * as Y from "yjs";
 import { LimitedMap } from "./util/LimitedMap";
 import { debounce } from "./util/time";
@@ -7,11 +5,14 @@ import type { EditorView } from "codemirror";
 import { SelectionCRDT } from "./selection";
 import { YTree, type TreeJsonStructure } from "../../../shared/ytree";
 import { writable, type Writable } from "svelte/store";
-import type { YArray, YElementType, YMap } from "../../../shared/typedYjs";
+import type { YArray, YMap } from "../../../shared/typedYjs";
 import type { Attribute } from "./attributes";
 import { v4 as uuidv4 } from "uuid";
 import { route } from "../stores/router";
 import { isMobile } from "./util/device.svelte";
+import type { SyncedDocument } from "../connection/document";
+import { getSyncedDocument } from "../connection";
+import type { WorkspaceSchema } from "@shared/connection/Workspace";
 
 type UserColor = {
     color: string,
@@ -30,7 +31,7 @@ const userColors: UserColor[] = [
 
 export type EditorInfo = {
     id: string,
-    sub: DocSubscription,
+    sub: SyncedDocument<any>,
     text: Y.Text,
     selection: SelectionCRDT,
     undoManager: Y.UndoManager,
@@ -60,14 +61,14 @@ export class Client {
         });
     }
 
-    private workspaceDocument = getDocument("global", () => {
+    private workspaceDocument = getSyncedDocument<WorkspaceSchema>("global", () => {
         this.resubscribeMeta();
         this.workspaceLoaded = true;
         for(const cb of this.workspaceLoadCallbacks) cb();
         this.workspaceLoadCallbacks = [];
     });
 
-    public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages") as YMap<any>);
+    public pageTree = new YTree<PageMeta>(this.workspaceDocument.doc.getMap("pages"));
 
     private attributesMap = this.workspaceDocument.doc.getMap("attributes") as YMap<{
         [key: string]: YArray<Attribute[]>

@@ -1,53 +1,72 @@
 import { Awareness } from "y-protocols/awareness.js";
 import * as Y from "yjs";
-import type { DocSubscription } from ".";
 import type { YDoc, YDocSchema } from "@shared/typedYjs";
+import type { ServerSocket } from "./socket";
 
-export function getDocument<DocType extends YDocSchema>(
-    id: string,
-    loadedCallback: (() => void) | null = null
-): DocSubscription<DocType> {
-    const doc = new Y.Doc() as unknown as YDoc<DocType>;
+enum SyncStatus {
+    Disconnected,
+    Connecting,
+    Synced,
+    UnsyncedChanges,
+    Error
+}
 
-    
-
-    // const localPersistence = new IndexeddbPersistence(id, doc);
-    // localPersistence.once("synced", () => {
-    //     console.log(`Locally-saved IndexDB content loaded for ${id}`);
-    //     if(!loaded) {
-    //         loaded = true;
-    //         loadedCallback?.();
-    //     }
-    // });
-    let loaded = false;
-
-    // remoteProvider.on("synced", () => {
-    //     console.log(`Synced to remote provider for ${id}`);
-    //     if(!loaded) {
-    //         loaded = true;
-    //         loadedCallback?.(); 
-    //     }
-    // });
-    // remoteProvider.on("authenticated", () => {
-    //     if(route.current.onRoute("auth")) {
-    //         route.navigate("/");
-    //     }
-    //     console.log(`Authenticated to remote provider for ${id}`);
-    // });
-    // remoteProvider.on("status", (e: { status: "connected" | "disconnected" }) => {
-    //     console.log(`Remote provider status for ${id}: ${e.status}`);
-    // });
-    return {
-        doc: doc as YDoc<DocType>,
-        // awareness: remoteProvider.awareness!,
-        // disconnect() {
-        //     remoteProvider.detach();
-        //     remoteProvider.destroy();
-        //     // localPersistence.destroy();
-        //     doc.destroy();
-        // }
-        awareness: new Awareness(doc as unknown as Y.Doc),
-        disconnect() {
+/**
+ * Note: synced documents are singleton per ID.  
+ * Because they use reference counting, you MUST call `release()` when you're done with it.
+ */
+export class SyncedDocument<DocType extends YDocSchema>{
+    // Reference counting so we only subscribe once per document
+    private refCount: number = 0;
+    private static instances: Map<string, SyncedDocument<any>> = new Map();
+    public static getInstance<DocType extends YDocSchema>(id: string, ws: ServerSocket):
+        SyncedDocument<DocType> {
+        let instance = this.instances.get(id) as SyncedDocument<DocType> | undefined;
+        if(!instance) {
+            instance = new SyncedDocument<DocType>(id, ws);
+            this.instances.set(id, instance);
         }
-    };
+        instance.refCount++;
+        return instance;
+    }
+
+    // Main data
+    public doc: YDoc<DocType>;
+    public awareness: Awareness;
+    public status: SyncStatus = SyncStatus.Disconnected;
+
+    private onloadHandlers: (() => void)[] = [];
+    public onload(cb: () => void) {
+        if(this.status === SyncStatus.Synced || this.status === SyncStatus.UnsyncedChanges) {
+            cb();
+            return;
+        }
+
+        this.onloadHandlers.push(cb);
+    }
+
+    // Private to force singleton usage
+    private constructor(public id: string, private socket: ServerSocket) {
+        this.doc = new Y.Doc() as unknown as YDoc<DocType>;
+        this.awareness = new Awareness(this.doc as unknown as Y.Doc);
+
+        this.connect();
+    }
+
+    public release() {
+        this.refCount--;
+        if(this.refCount <= 0) {
+            this.disconnect();
+            SyncedDocument.instances.delete(this.id);
+        }
+    }
+
+    private connect() {
+        
+    }
+    
+    private disconnect() {
+        this.awareness.destroy();
+        this.doc.destroy();
+    }
 }
