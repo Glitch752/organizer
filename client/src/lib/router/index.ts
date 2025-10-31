@@ -162,7 +162,11 @@ export class Router<CRKeys extends string[], Paths extends RouterPathConstants<C
     }
 
     public async navigate(path: string): Promise<void> {
-        this.set(await this.getPathData(path));
+        if(!this.set) {
+            // probably still in initialization; just update the history
+        } else {
+            this.set(await this.getPathData(path));
+        }
         history.pushState({}, '', path);
     }
 
