@@ -2,6 +2,8 @@ import { Awareness } from "y-protocols/awareness.js";
 import * as Y from "yjs";
 import type { YDoc, YDocSchema } from "@shared/typedYjs";
 import type { ServerSocket } from "./socket";
+import { EventEmitter } from "../lib/util/EventEmitter";
+import type { AwarenessDataMessage } from "@shared/connection/Messages";
 
 enum SyncStatus {
     Disconnected,
@@ -11,11 +13,16 @@ enum SyncStatus {
     Error
 }
 
+type SyncedDocumentEvents = {
+    statusChange: SyncStatus;
+    load: void;
+}
+
 /**
  * Note: synced documents are singleton per ID.  
  * Because they use reference counting, you MUST call `release()` when you're done with it.
  */
-export class SyncedDocument<DocType extends YDocSchema>{
+export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<SyncedDocumentEvents> {
     // Reference counting so we only subscribe once per document
     private refCount: number = 0;
     private static instances: Map<string, SyncedDocument<any>> = new Map();
@@ -47,6 +54,8 @@ export class SyncedDocument<DocType extends YDocSchema>{
 
     // Private to force singleton usage
     private constructor(public id: string, private socket: ServerSocket) {
+        super();
+        
         this.doc = new Y.Doc() as unknown as YDoc<DocType>;
         this.awareness = new Awareness(this.doc as unknown as Y.Doc);
 
@@ -76,5 +85,17 @@ export class SyncedDocument<DocType extends YDocSchema>{
         this.doc.destroy();
 
         this.socket.disconnectFromDocument(this);
+    }
+
+    public initialSync(data: Uint8Array) {
+        // TODO
+    }
+
+    public applyUpdate(update: Uint8Array) {
+        Y.applyUpdate(this.doc as unknown as Y.Doc, update);
+    }
+
+    public applyAwarenessUpdate(update: AwarenessDataMessage) {
+        // TODO
     }
 }

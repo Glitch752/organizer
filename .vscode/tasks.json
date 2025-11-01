@@ -1,0 +1,36 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "dev",
+			"path": "client",
+			"problemMatcher": [],
+			"label": "npm: dev - client",
+			"detail": "vite"
+		},
+		{
+			"type": "npm",
+			"script": "dev",
+			"path": "server",
+			"problemMatcher": [],
+			"label": "npm: dev - server",
+			"detail": "tsx src/index.ts"
+		},
+		{
+			"label": "Run Both Client and Server",
+			"dependsOn": [
+				"npm: dev - client",
+				"npm: dev - server"
+			],
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			},
+			"runOptions": {
+				"runOn": "folderOpen"
+			},
+			"problemMatcher": []
+		}
+	]
+}

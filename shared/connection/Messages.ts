@@ -12,7 +12,7 @@ type SyncDataMessage = {
     data: Uint8Array
 };
 
-type AwarenessDataMessage = {
+export type AwarenessDataMessage = {
     type: "awareness-data",
     doc: string,
     // TODO
@@ -32,6 +32,11 @@ type SyncEndMessage = {
     type: "sync-end",
     doc: string
 };
+type InitialSyncMessage = {
+    type: "initial-sync",
+    doc: string,
+    data: Uint8Array
+};
 type DocUpdateMessage = {
     type: "doc-update",
     doc: string,
@@ -46,6 +51,7 @@ type AwarenessUpdateMessage = {
 export type ClientToServerMessage =
     | SyncBeginMessage
     | SyncEndMessage
+    | InitialSyncMessage
     | DocUpdateMessage
     | AwarenessUpdateMessage;
 
