@@ -14,6 +14,7 @@ type ServerSocketEvents = {
 export class ServerSocket extends EventEmitter<ServerSocketEvents> {
     private ws: WebSocket;
     private registeredDocuments: Map<string, SyncedDocument<any>> = new Map();
+    private queuedMessages: ClientToServerMessage[] = [];
 
     constructor(private url: string) {
         super();
@@ -40,6 +41,8 @@ export class ServerSocket extends EventEmitter<ServerSocketEvents> {
         socket.onopen = () => {
             console.log("WebSocket connection opened");
             this.emit("open", undefined);
+            this.queuedMessages.forEach(msg => this.send(msg));
+            this.queuedMessages = [];
         };
         socket.onclose = (e) => {
             console.log(`WebSocket connection closed (code: ${e.code}, reason: ${e.reason})`);
@@ -70,6 +73,10 @@ export class ServerSocket extends EventEmitter<ServerSocketEvents> {
     }
 
     private send(message: ClientToServerMessage) {
+        if(this.ws.readyState !== WebSocket.OPEN) {
+            this.queuedMessages.push(message);
+            return;
+        }
         this.ws.send(JSON.stringify(message));
     }
 

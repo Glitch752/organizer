@@ -75,7 +75,12 @@ export class Backend {
     }
 
     public handleDisconnection(ws: WSContext<WebSocket.WebSocket>) {
+        const connection = this.connectedClients.get(ws);
+        if(!connection) return;
         console.log("WebSocket connection closed");
+        
+        connection.close();
+
         this.connectedClients.delete(ws);
     }
 }
