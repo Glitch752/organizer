@@ -54,7 +54,7 @@
 	.app {
 		display: grid;
 		grid-template-columns: 1fr 0;
-		grid-template-rows: auto 1fr;
+		grid-template-rows: auto 1fr 1.25rem;
 		height: 100vh;
 
 		// You can do this... for some reason

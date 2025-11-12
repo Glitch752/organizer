@@ -4,13 +4,15 @@ import type { YDoc, YDocSchema } from "@shared/typedYjs";
 import type { ServerSocket } from "./socket";
 import { EventEmitter } from "../lib/util/EventEmitter";
 import type { AwarenessDataMessage } from "@shared/connection/Messages";
+import { writable, type Writable } from "svelte/store";
 
-enum SyncStatus {
-    Disconnected,
-    Connecting,
-    Synced,
-    UnsyncedChanges,
-    Error
+export enum SyncStatus {
+    Error = 5,
+    Disconnected = 4,
+    UnsyncedChanges = 3,
+    Connecting = 2,
+    Synced = 1,
+    None = 0
 }
 
 type SyncedDocumentEvents = {
@@ -32,15 +34,34 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         if(!instance) {
             instance = new SyncedDocument<DocType>(id, ws);
             this.instances.set(id, instance);
+            SyncedDocument.updateGlobalSyncStatus();
         }
         instance.refCount++;
         return instance;
     }
 
+    public static globalSyncStatus: Writable<SyncStatus> = writable(SyncStatus.Disconnected);
+    private static updateGlobalSyncStatus() {
+        let highestStatus = SyncStatus.None;
+        for(const doc of this.instances.values()) {
+            if(doc.status > highestStatus) {
+                highestStatus = doc.status;
+            }
+        }
+        this.globalSyncStatus.set(highestStatus);
+    }
+
     // Main data
     public doc: YDoc<DocType>;
     public awareness: Awareness;
-    public status: SyncStatus = SyncStatus.Disconnected;
+    private _status: SyncStatus = SyncStatus.Disconnected;
+    public get status(): SyncStatus {
+        return this._status;
+    }
+    private set status(status: SyncStatus) {
+        this._status = status;
+        SyncedDocument.updateGlobalSyncStatus();
+    }
 
     private onloadHandlers: (() => void)[] = [];
     public onload(cb: () => void) {
@@ -67,6 +88,7 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         if(this.refCount <= 0) {
             this.disconnect();
             SyncedDocument.instances.delete(this.id);
+            SyncedDocument.updateGlobalSyncStatus();
         }
     }
 

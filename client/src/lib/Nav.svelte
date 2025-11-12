@@ -1,6 +1,7 @@
 <script lang="ts">
     import { persistentState } from "../stores/persistent";
   	import { route } from "../stores/router";
+  import StatusBar from "./StatusBar.svelte";
 
     let latestPage = persistentState<string | null>("latestPage", null);
     $effect(() => {
@@ -19,7 +20,11 @@
     </div>
 
     <!-- svelte-ignore svelte_component_deprecated - <Component/> isn't reactive with a writable for some reason? -->
-    <svelte:component this={$route.components?.nav} />
+    <div class="items">
+        <svelte:component this={$route.components?.nav} />
+    </div>
+
+    <StatusBar />
 </nav>
 
 <style lang="scss">
@@ -31,12 +36,17 @@
 
 		border-left: 2px solid var(--surface-1-border);
 
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-rows: subgrid;
 
         margin: 0;
 
         width: var(--nav-width);
+
+        .items {
+            display: flex;
+            flex-direction: column;
+        }
     }
 
     .header {
