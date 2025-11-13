@@ -36,7 +36,10 @@
         });
     }}
     padding={false}
-    keepInViewport={true}
+    anchorOptions={{
+        keepInViewport: true
+    }}
+    portal={false}
     buttonContent={children}
 >
     {#if attributeArray && attribute}

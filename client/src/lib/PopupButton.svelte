@@ -3,23 +3,28 @@
     import { easeInOutQuad } from "./util/time";
     import { fly } from "svelte/transition";
     import { clickOff } from "./actions/clickOff.svelte";
+    import Portal from "./Portal.svelte";
 
     const {
         text,
         buttonContent,
         title,
         children,
-        keepInViewport = false,
+        anchorOptions = undefined,
         padding = true,
-        onclose
+        onclose,
+        portal = true,
+        style = ""
     }: {
         text?: string,
         buttonContent?: Snippet,
         title?: string,
         children: Snippet,
-        keepInViewport?: boolean,
+        anchorOptions?: AnchorOptions,
         padding?: boolean,
-        onclose?: () => void
+        onclose?: () => void,
+        portal?: boolean,
+        style?: string
     } = $props();
 
     let pickerOpen = $state(false);
@@ -32,17 +37,19 @@
 
     // svelte-ignore non_reactive_update Seems fine idk
     let button: HTMLButtonElement;
-    
-    function anchor(el: HTMLElement, options: {
-        to: HTMLElement,
-        
+
+    export type AnchorOptions = {
         top?: "top" | "bottom",
         left?: "left" | "right",
         bottom?: "top" | "bottom",
         right?: "left" | "right",
 
         keepInViewport?: boolean
-    }) {
+    };
+    
+    function anchor(el: HTMLElement, options: {
+        to: HTMLElement
+    } & AnchorOptions) {
         // Scroll-linked positioning is a bit gross, but anchor positioning isn't widely available yet
         // and the polyfill is a pain to use with Svelte
 
@@ -169,16 +176,20 @@
     }
 </script>
 
-<div>
-    <button bind:this={button} onclick={() => pickerOpen = !pickerOpen} {title}>
+{#snippet btn()}
+    <button bind:this={button} onclick={() => pickerOpen = !pickerOpen} {title} {style}>
         {@render buttonContent?.()}
         {text}
     </button>
+{/snippet}
+
+{#if portal}
+    {@render btn()}
 
     {#if pickerOpen}
-        <!-- <Portal target="body"> -->
+        <Portal target="body">
             <dialog
-                use:anchor={{ to: button, top: "bottom", left: "left", keepInViewport }}
+                use:anchor={{ to: button, top: "bottom", left: "left", ...(anchorOptions ?? {}) }}
                 use:clickOff={() => pickerOpen = false}
                 onclose={() => pickerOpen = false}
                 transition:fly={{ duration: 150, delay: 30, easing: easeInOutQuad, y: -15 }}
@@ -187,9 +198,26 @@
             >
                 {@render children()}
             </dialog>
-        <!-- </Portal> -->
+        </Portal>
     {/if}
-</div>
+{:else}
+    <div>
+        {@render btn()}
+
+        {#if pickerOpen}
+            <dialog
+                use:anchor={{ to: button, top: "bottom", left: "left", ...(anchorOptions ?? {}) }}
+                use:clickOff={() => pickerOpen = false}
+                onclose={() => pickerOpen = false}
+                transition:fly={{ duration: 150, delay: 30, easing: easeInOutQuad, y: -15 }}
+                class="picker"
+                class:padding
+            >
+                {@render children()}
+            </dialog>
+        {/if}
+    </div>
+{/if}
 
 <style lang="scss">
 div {

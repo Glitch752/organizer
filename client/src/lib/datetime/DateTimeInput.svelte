@@ -2,9 +2,10 @@
     import CalendarDatePicker from "./calendarDatePicker/CalendarDatePicker.svelte";
     import TimePicker from "./TimePicker.svelte";
     import { parseFuzzyDateTime } from "./fuzzyDate";
-    import { makeZonedDateTime, parseZonedDateTime, type ZonedDateTimeString } from "./time";
+    import { makeZonedDateTime, parseZonedDateTime } from "./time";
     import TimeZonePicker from "./TimeZonePicker.svelte";
     import PopupButton from "../PopupButton.svelte";
+    import type { ZonedDateTimeString } from "@shared/datetime";
 
     let { value = $bindable(), onchange }: {
         value: ZonedDateTimeString,
@@ -28,7 +29,7 @@
     let interpretInputDate = $state(formatDatetime(value));
 </script>
 
-<PopupButton text={formatDatetime(value)} title={value}>
+<PopupButton text={formatDatetime(value)} title={value} portal={false}>
     <!-- TODO: Allow using enter to set interpreted value and make component for interpret boxes -->
     <div class="interpret">
         <input type="text" bind:value={interpretInputDate} />

@@ -1,7 +1,8 @@
 <script lang="ts">
     import { SyncedDocument, SyncStatus } from "../connection/document";
+    import PopupButton from "./PopupButton.svelte";
     
-    const syncStatus = SyncedDocument.globalSyncStatus;
+    const currentStatus = SyncedDocument.globalSyncStatus;
     
     const syncStatusDisplay: {
         [status in SyncStatus]: { name: string, color: string }
@@ -16,10 +17,20 @@
 </script>
 
 <div class="statusbar">
-    <button class="sync-status" style="color: {syncStatusDisplay[$syncStatus].color}">
+    {#snippet syncStatus()}
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 20v-5h-5M4 4v5h5m10.938 2A8.001 8.001 0 0 0 5.07 8m-1.008 5a8.001 8.001 0 0 0 14.868 3"/></svg>
-        {syncStatusDisplay[$syncStatus].name}
-    </button>
+        {syncStatusDisplay[$currentStatus].name}
+    {/snippet}
+    <PopupButton
+        style="color: {syncStatusDisplay[$currentStatus].color}"
+        buttonContent={syncStatus}
+        anchorOptions={{
+            bottom: "top",
+            top: undefined
+        }}
+    >
+        <span>test</span>
+    </PopupButton>
 </div>
 
 
@@ -32,7 +43,7 @@
         font-size: 0.875rem;
     }
 
-    button {
+    .statusbar > :global(button) {
         border: none;
         background-color: transparent;
         padding: 0 0.5rem;
@@ -40,13 +51,13 @@
         font-size: inherit;
 
         &:hover {
-            background-color: var(--surface-0);
+            background-color: var(--surface-1);
         }
+    }
 
-        svg {
-            width: 1rem;
-            height: 1rem;
-            vertical-align: middle;
-        }
+    svg {
+        width: 1rem;
+        height: 1rem;
+        vertical-align: middle;
     }
 </style>

@@ -22,7 +22,7 @@
     let interpretInputDate = $state(formatDate(value));
 </script>
 
-<PopupButton text={formatDate(value)} title={value}>
+<PopupButton text={formatDate(value)} title={value} portal={false}>
     <div class="interpret">
         <input type="text" bind:value={interpretInputDate} />
         <button onclick={() => {

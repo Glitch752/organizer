@@ -2,9 +2,10 @@
     import TimePicker from "./TimePicker.svelte";
     import { parseFuzzyTime } from "./fuzzyDate";
     import TimeZonePicker from "./TimeZonePicker.svelte";
-    import { isZonedTime, makePlainTime, parsePlainTime, parseZonedTime, type PlainTimeString, type ZonedTimeString } from "./time";
+    import { isZonedTime, makePlainTime, parsePlainTime, parseZonedTime } from "./time";
     import PopupButton from "../PopupButton.svelte";
-  import { Temporal } from "@js-temporal/polyfill";
+    import { Temporal } from "@js-temporal/polyfill";
+    import type { PlainTimeString, ZonedTimeString } from "@shared/datetime";
 
     let { value = $bindable(), onchange }: {
         value: ZonedTimeString | PlainTimeString,
@@ -41,7 +42,7 @@
     let interpretInputDate = $state(formatTime(value));
 </script>
 
-<PopupButton text={formatTime(value)} title={value}>
+<PopupButton text={formatTime(value)} title={value} portal={false}>
     <div class="interpret">
         <input type="text" bind:value={interpretInputDate} />
         <button onclick={() => {

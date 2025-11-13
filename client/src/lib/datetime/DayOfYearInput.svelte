@@ -1,8 +1,9 @@
 <script lang="ts">
     import { parseFuzzyDayOfYear } from "./fuzzyDate";
-    import { makePlainMonthDay, parsePlainMonthDay, type PlainMonthDayString } from "./time";
+    import { makePlainMonthDay, parsePlainMonthDay } from "./time";
     import PlainMonthDayPicker from "./PlainMonthDayPicker.svelte";
     import PopupButton from "../PopupButton.svelte";
+    import type { PlainMonthDayString } from "@shared/datetime";
 
     let { value = $bindable(), onchange }: {
         value: PlainMonthDayString,
@@ -20,7 +21,7 @@
     let interpretInputDate = $state(formatDay(value));
 </script>
 
-<PopupButton text={formatDay(value)} title={value}>
+<PopupButton text={formatDay(value)} title={value} portal={false}>
     <div class="interpret">
         <input type="text" bind:value={interpretInputDate} />
         <button onclick={() => {
