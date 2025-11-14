@@ -3,8 +3,9 @@ import * as Y from "yjs";
 import type { YDoc, YDocSchema } from "@shared/typedYjs";
 import type { ServerSocket } from "./socket";
 import { EventEmitter } from "../lib/util/EventEmitter";
-import type { AwarenessDataMessage } from "@shared/connection/Messages";
+import type { AwarenessDataMessage, InitialSyncMessage, SyncDataMessage } from "@shared/connection/Messages";
 import { writable, type Writable } from "svelte/store";
+import type { DocumentID } from "@shared/connection/Document";
 
 export enum SyncStatus {
     Error = 5,
@@ -26,9 +27,10 @@ type SyncedDocumentEvents = {
  */
 export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<SyncedDocumentEvents> {
     // Reference counting so we only subscribe once per document
-    private refCount: number = 0;
+    public refCount: number = 0;
+    
     private static instances: Map<string, SyncedDocument<any>> = new Map();
-    public static getInstance<DocType extends YDocSchema>(id: string, ws: ServerSocket):
+    public static getInstance<DocType extends YDocSchema>(id: DocumentID, ws: ServerSocket):
         SyncedDocument<DocType> {
         let instance = this.instances.get(id) as SyncedDocument<DocType> | undefined;
         if(!instance) {
@@ -38,6 +40,10 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         }
         instance.refCount++;
         return instance;
+    }
+
+    public static listInstances(): Array<SyncedDocument<any>> {
+        return Array.from(this.instances.values());
     }
 
     public static globalSyncStatus: Writable<SyncStatus> = writable(SyncStatus.Disconnected);
@@ -60,6 +66,7 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
     }
     private set status(status: SyncStatus) {
         this._status = status;
+        this.emit("statusChange", status);
         SyncedDocument.updateGlobalSyncStatus();
     }
 
@@ -74,7 +81,7 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
     }
 
     // Private to force singleton usage
-    private constructor(public id: string, private socket: ServerSocket) {
+    private constructor(public id: DocumentID, private socket: ServerSocket) {
         super();
         
         this.doc = new Y.Doc() as unknown as YDoc<DocType>;
@@ -109,8 +116,23 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         this.socket.disconnectFromDocument(this);
     }
 
-    public initialSync(data: Uint8Array) {
-        // TODO
+    public static initialSync(message: InitialSyncMessage) {
+        if(this.instances.has(message.doc)) {
+            this.instances.get(message.doc)!.initialSync(message.data);
+        } else {
+            console.warn(`Received initial sync for unknown document ID ${message.doc}`);
+        }
+    }
+
+    private initialSync(data: Uint8Array) {
+        Y.applyUpdate(this.doc as unknown as Y.Doc, data);
+        this.status = SyncStatus.Synced;
+    }
+
+    public static syncData(message: SyncDataMessage) {
+        if(this.instances.has(message.doc)) {
+            this.instances.get(message.doc)!.applyUpdate(message.data);
+        }
     }
 
     public applyUpdate(update: Uint8Array) {

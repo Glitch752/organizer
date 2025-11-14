@@ -1,7 +1,7 @@
 <script lang="ts">
     import { persistentState } from "../stores/persistent";
   	import { route } from "../stores/router";
-  import StatusBar from "./StatusBar.svelte";
+    import StatusBar from "./statusBar/StatusBar.svelte";
 
     let latestPage = persistentState<string | null>("latestPage", null);
     $effect(() => {

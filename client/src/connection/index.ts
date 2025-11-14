@@ -1,10 +1,11 @@
 import { route } from "../stores/router";
 import { PermissionStatus } from "@shared/connection/Permissions";
-import { AUTHENTICATION_FAILED_CODE, type ServerToClientMessage } from "@shared/connection/Messages";
+import { AUTHENTICATION_FAILED_CODE } from "@shared/connection/Messages";
 import { writable } from "svelte/store";
 import { SyncedDocument } from "./document";
 import type { YDocSchema } from "@shared/typedYjs";
 import { ServerSocket } from "./socket";
+import type { DocumentID } from "@shared/connection/Document";
 
 const websocketURL = `ws${location.protocol === "https:" ? "s" : ""}://${location.host}/ws`;
 console.log(`Websocket URL: ${websocketURL}`);
@@ -13,7 +14,7 @@ export let socket = new ServerSocket(websocketURL);
 export let username = writable<string | null>(null);
 
 export function getSyncedDocument<DocType extends YDocSchema>(id: string, onLoad?: (() => void)): SyncedDocument<DocType> {
-    const instance = SyncedDocument.getInstance<DocType>(id, socket);
+    const instance = SyncedDocument.getInstance<DocType>(id as DocumentID, socket);
 
     if(onLoad) instance.onload(onLoad);
     
@@ -35,6 +36,12 @@ socket.on("message", (msg) => {
         case "authenticated":
             console.log(`Authenticated as ${msg.username} with permissions ${PermissionStatus[msg.permissions]}`);
             username.set(msg.username);
+            break;
+        case "initial-sync":
+            SyncedDocument.initialSync(msg);
+            break;
+        case "sync-data":
+            SyncedDocument.syncData(msg);
             break;
     }
 });

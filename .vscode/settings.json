@@ -1,0 +1,5 @@
+{
+    // Works for the Svelte vscode extension even if prettier isn't installed
+    "prettier.useTabs": false,
+	"prettier.tabWidth": 4,
+}

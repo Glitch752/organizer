@@ -236,5 +236,9 @@ dialog {
     z-index: 100;
     display: flex;
     flex-direction: column;
+
+    color: var(--color-text);
+
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
 }
 </style>

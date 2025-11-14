@@ -1,19 +1,19 @@
 import { DocumentID } from "./Document";
 import { PermissionStatus } from "./Permissions"
 
-type AuthenticatedMessage = {
+export type AuthenticatedMessage = {
     type: "authenticated",
     username: string,
     permissions: PermissionStatus
 };
 
-type InitialSyncMessage = {
+export type InitialSyncMessage = {
     type: "initial-sync",
     doc: DocumentID,
     data: Uint8Array
 };
 
-type SyncDataMessage = {
+export type SyncDataMessage = {
     type: "sync-data",
     doc: DocumentID,
     data: Uint8Array
@@ -32,20 +32,20 @@ export type ServerToClientMessage =
     | AwarenessDataMessage;
 
 
-type SyncBeginMessage = {
+export type SyncBeginMessage = {
     type: "sync-begin",
     doc: DocumentID
 };
-type SyncEndMessage = {
+export type SyncEndMessage = {
     type: "sync-end",
     doc: DocumentID
 };
-type DocUpdateMessage = {
+export type DocUpdateMessage = {
     type: "doc-update",
     doc: DocumentID,
     data: Uint8Array
 };
-type AwarenessUpdateMessage = {
+export type AwarenessUpdateMessage = {
     type: "awareness-update",
     doc: DocumentID,
     // TODO
