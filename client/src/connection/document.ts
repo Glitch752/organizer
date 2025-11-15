@@ -70,6 +70,10 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         SyncedDocument.updateGlobalSyncStatus();
     }
 
+    // New: suppress sending updates originated from remote applyUpdate
+    private suppressLocalUpdates: boolean = false;
+    private onUpdateBound: ((update: Uint8Array, origin?: any) => void) | null = null;
+
     private onloadHandlers: (() => void)[] = [];
     public onload(cb: () => void) {
         if(this.status === SyncStatus.Synced || this.status === SyncStatus.UnsyncedChanges) {
@@ -86,6 +90,21 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         
         this.doc = new Y.Doc() as unknown as YDoc<DocType>;
         this.awareness = new Awareness(this.doc as unknown as Y.Doc);
+
+        // Setup update handler to propagate local Yjs updates to the server
+        this.onUpdateBound = (update: Uint8Array) => {
+            if(this.suppressLocalUpdates) return;
+
+            // When the user causes local updates, forward them to the server
+            try {
+                this.socket.sendMessage({ type: "doc-update", doc: this.id, data: update });
+                // Mark we have unsynced changes until the server 'synced' state is received
+                this.status = SyncStatus.UnsyncedChanges;
+            } catch (e) {
+                console.error("Failed to send doc update to server", e);
+            }
+        };
+        this.doc.on('update', this.onUpdateBound);
 
         this.connect();
     }
@@ -111,6 +130,12 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         this.status = SyncStatus.Disconnected;
 
         this.awareness.destroy();
+
+        if(this.onUpdateBound) {
+            try { this.doc.off('update', this.onUpdateBound); } catch {}
+            this.onUpdateBound = null;
+        }
+
         this.doc.destroy();
 
         this.socket.disconnectFromDocument(this);
@@ -125,8 +150,12 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
     }
 
     private initialSync(data: Uint8Array) {
-        Y.applyUpdate(this.doc as unknown as Y.Doc, data);
+        // Use applyUpdate so remote updates aren't echoed back to the server
+        this.applyUpdate(data);
         this.status = SyncStatus.Synced;
+
+        for(const cb of this.onloadHandlers) cb();
+        this.onloadHandlers = [];
     }
 
     public static syncData(message: SyncDataMessage) {
@@ -136,7 +165,15 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
     }
 
     public applyUpdate(update: Uint8Array) {
-        Y.applyUpdate(this.doc as unknown as Y.Doc, update);
+        // Suppress the update handler while applying remote updates
+        this.suppressLocalUpdates = true;
+        try {
+            Y.applyUpdate(this.doc as unknown as Y.Doc, update);
+        } finally {
+            this.suppressLocalUpdates = false;
+        }
+        // Server-propagated update brings us into a synced state for now
+        this.status = SyncStatus.Synced;
     }
 
     public applyAwarenessUpdate(update: AwarenessDataMessage) {

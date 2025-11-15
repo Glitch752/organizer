@@ -22,7 +22,7 @@ export type SyncDataMessage = {
 export type AwarenessDataMessage = {
     type: "awareness-data",
     doc: DocumentID,
-    // TODO
+    data: any
 };
 
 export type ServerToClientMessage =
@@ -48,7 +48,7 @@ export type DocUpdateMessage = {
 export type AwarenessUpdateMessage = {
     type: "awareness-update",
     doc: DocumentID,
-    // TODO
+    data: any
 };
 
 export type ClientToServerMessage =

@@ -53,7 +53,17 @@ export class ServerSocket extends EventEmitter<ServerSocketEvents> {
             this.emit("error", error);
         };
         socket.onmessage = (event) => {
-            const msg = JSON.parse(event.data) as ServerToClientMessage;
+            // Parse message and convert any numeric arrays back into Uint8Array
+            const raw = JSON.parse(event.data) as any;
+            if(raw && raw.data && Array.isArray(raw.data)) {
+                try {
+                    raw.data = new Uint8Array(raw.data as number[]);
+                } catch (e) {
+                    console.warn("Failed to convert incoming binary data to Uint8Array", e);
+                }
+            }
+
+            const msg = raw as ServerToClientMessage;
             this.emit("message", msg);
         };
         return socket;
@@ -78,6 +88,20 @@ export class ServerSocket extends EventEmitter<ServerSocketEvents> {
             return;
         }
         this.ws.send(JSON.stringify(message));
+    }
+
+    // Public wrapper that converts typed arrays for JSON serialization before sending
+    public sendMessage(message: ClientToServerMessage) {
+        const replacer = (_k: string, v: any) => {
+            if(v instanceof Uint8Array) return Array.from(v as Uint8Array);
+            return v;
+        };
+        const serialized = JSON.parse(JSON.stringify(message, replacer));
+        if(this.ws.readyState !== WebSocket.OPEN) {
+            this.queuedMessages.push(serialized as ClientToServerMessage);
+            return;
+        }
+        this.ws.send(JSON.stringify(serialized));
     }
 
     public connectToDocument(doc: SyncedDocument<any>) {

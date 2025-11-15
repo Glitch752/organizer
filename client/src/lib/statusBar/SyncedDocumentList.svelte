@@ -103,10 +103,11 @@
     .doc {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 1rem;
         padding: 0.25rem 0.5rem;
         font-size: 0.875rem;
         border-radius: 3px;
+        white-space: nowrap;
 
         &:hover {
             background-color: var(--surface-1);

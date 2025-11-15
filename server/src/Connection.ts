@@ -2,22 +2,38 @@ import WebSocket from 'ws';
 import { PermissionStatus } from '@shared/connection/Permissions';
 import { DocumentID } from '@shared/connection/Document';
 import { ClientToServerMessage, ServerToClientMessage } from '@shared/connection/Messages';
+import type { DataStore } from './DataStore';
+import { DocumentContainer } from './document/Document';
+import * as Y from 'yjs';
+import { StorageProvider } from './document/StorageProvider';
+import { NoteStorageProvider } from './document/NoteStorageProvider';
+import { RawStorageProvider } from './document/RawStorageProvider';
+import { WorkspaceStorageProvider } from './document/WorkspaceStorageProvider';
 
 export class Connection {
     public permissionStatus: PermissionStatus = PermissionStatus.Unauthenticated;
 
     public openDocuments: Set<DocumentID> = new Set();
 
+    private onMessageBound: (rawData: WebSocket.RawData, isBinary: boolean) => Promise<void>;
+
     constructor(
         public readonly ws: WebSocket.WebSocket,
-        public readonly username: string
+        public readonly username: string,
+        private readonly dataStore: DataStore
     ) {
-        ws.on("message", this.onMessage.bind(this));
+        this.onMessageBound = this.onMessage.bind(this);
+        ws.on("message", this.onMessageBound);
     }
 
-    public send(message: ServerToClientMessage) {
+    public send(message: any) {
         if(this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify(message));
+            // Ensure typed arrays are JSON-serializable
+            const cloned = JSON.parse(JSON.stringify(message, (_k, v) => {
+                if(v instanceof Uint8Array) return Array.from(v as Uint8Array);
+                return v;
+            }));
+            this.ws.send(JSON.stringify(cloned));
         } else {
             console.warn("Attempted to send message on closed WebSocket");
         }
@@ -28,10 +44,10 @@ export class Connection {
             type: "authenticated",
             username: this.username,
             permissions: this.permissionStatus
-        });
+        } as ServerToClientMessage);
     }
 
-    private onMessage(rawData: WebSocket.RawData, isBinary: boolean) {
+    private async onMessage(rawData: WebSocket.RawData, isBinary: boolean) {
         if(isBinary) {
             console.warn(`Received non-string message from client, ignoring`);
             return;
@@ -48,6 +64,24 @@ export class Connection {
                 }
                 this.openDocuments.add(message.doc);
                 console.log(`Client opened document ${message.doc}`);
+
+                let storageProvider: StorageProvider;
+                if(message.doc.startsWith("doc:")) {
+                    storageProvider = new NoteStorageProvider(this.dataStore);
+                } else {
+                    storageProvider = new WorkspaceStorageProvider(this.dataStore);
+                }
+
+                // Get or create server-side document container
+                const doc = await DocumentContainer.getInstance(message.doc, storageProvider);
+                doc.addConnection(this);
+
+                const update = Y.encodeStateAsUpdate(doc.getYDoc());
+                this.send({
+                    type: "initial-sync",
+                    doc: message.doc,
+                    data: update
+                } as any);
                 break;
             }
             case "sync-end": {
@@ -56,13 +90,49 @@ export class Connection {
                     return;
                 }
                 this.openDocuments.delete(message.doc);
+                console.log(`Client closed document ${message.doc}`);
+
+                const doc = DocumentContainer.getExistingInstance(message.doc);
+                if(doc) doc.removeConnection(this);
+                break;
+            }
+            case "doc-update": {
+                // Only allow updates if we have the document opened and we have write permission
+                if(!this.openDocuments.has(message.doc)) {
+                    console.warn(`Client sent update for non-open document ${message.doc}, ignoring`);
+                    return;
+                }
+                if(this.permissionStatus !== PermissionStatus.ReadWrite) {
+                    console.warn(`Client attempted to update document ${message.doc} without write permission, ignoring`);
+                    return;
+                }
+
+                const doc = DocumentContainer.getExistingInstance(message.doc);
+                if(!doc) {
+                    console.warn(`Received update for non-existent container ${message.doc}`);
+                    return;
+                }
+                // Apply the update to the server ydoc and broadcast to other clients
+                const update = message.data instanceof Uint8Array ? message.data : new Uint8Array(message.data as number[]);
+                await doc.applyUpdate(update, this);
+                break;
+            }
+            case "awareness-update": {
+                // TODO: implement awareness handling if needed
                 break;
             }
         }
     }
 
     public close() {
-        // TODO: Clean up open documents? idk
-        this.ws.off("message", this.onMessage.bind(this));
+        console.log(`Closing connection for user ${this.username}`);
+        // Remove this connection from all open documents
+        for(const docId of this.openDocuments) {
+            const doc = DocumentContainer.getExistingInstance(docId);
+            if(doc) doc.removeConnection(this);
+        }
+        this.openDocuments.clear();
+
+        this.ws.off("message", this.onMessageBound);
     }
 }

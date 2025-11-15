@@ -44,4 +44,41 @@ export class DataStore {
         const filePath = this.getDocumentPath(id);
         await fs.promises.writeFile(filePath, data, { encoding: "utf-8" });
     }
+
+    // New: read the document content (returns null if it doesn't exist)
+    public async readDocument(id: DocumentID): Promise<string | null> {
+        const filePath = this.getDocumentPath(id);
+        try {
+            const data = await fs.promises.readFile(filePath, { encoding: "utf-8" });
+            return data;
+        } catch {
+            return null;
+        }
+    }
+
+    // New: JSON-based storage for arbitrary sub-paths (e.g. workspaces)
+    private ensureSubdirExists(subdir: string) {
+        const dir = path.join(this.basePath, subdir);
+        fs.mkdirSync(dir, { recursive: true });
+    }
+
+    private getJsonFilePath(subdir: string, id: DocumentID): string {
+        this.ensureSubdirExists(subdir);
+        return path.join(this.basePath, subdir, `${id}.json`);
+    }
+
+    public async readJsonFile(subdir: string, id: DocumentID): Promise<any | null> {
+        const filePath = this.getJsonFilePath(subdir, id);
+        try {
+            const data = await fs.promises.readFile(filePath, { encoding: "utf-8" });
+            return JSON.parse(data);
+        } catch {
+            return null;
+        }
+    }
+
+    public async updateJsonFile(subdir: string, id: DocumentID, data: any): Promise<void> {
+        const filePath = this.getJsonFilePath(subdir, id);
+        await fs.promises.writeFile(filePath, JSON.stringify(data, null, 2), { encoding: "utf-8" });
+    }
 }

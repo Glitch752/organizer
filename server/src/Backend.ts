@@ -64,7 +64,7 @@ export class Backend {
         
         console.log(`New WebSocket connection established with client (user: ${username})`);
 
-        const connection = new Connection(ws.raw, username);
+        const connection = new Connection(ws.raw, username, this.dataStore);
         connection.permissionStatus =
             // Kinda hacky. Hopefully temporary but probably not.
             await this.checkAuth({ cookie }) ? PermissionStatus.ReadWrite : PermissionStatus.Unauthenticated;
