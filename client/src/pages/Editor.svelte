@@ -12,79 +12,85 @@
     import "../styles/editor/editor.scss";
     import type { Client } from "../lib/client";
     import { pageAttributes } from "../lib/codeMirrorPlugins/pageAttributes";
+    import { route } from "../stores/router";
 
     const { id, client }: { id: string, client: Client } = $props();
     
     let editorContainer: HTMLDivElement;
 
     onMount(() => {
-        const { sub, text: yText, selection, undoManager } = client.loadPage(id, () => {
-            view.dispatch({
-                selection: selection.selection,
-                effects: selection.scrollEffect(view)
+        try {
+            const { sub, text: yText, selection, undoManager } = client.loadPage(id, () => {
+                view.dispatch({
+                    selection: selection.selection,
+                    effects: selection.scrollEffect(view)
+                });
             });
-        });
-        const state = EditorState.create({
-            doc: yText.toString(),
-            extensions: [
-                pageAttributes(client),
+            const state = EditorState.create({
+                doc: yText.toString(),
+                extensions: [
+                    pageAttributes(client),
 
-                highlightSpecialChars(),
-                history(),
-                
-                drawSelection(),
-                dropCursor(),
-                rectangularSelection(),
-                crosshairCursor(),
-                
-                EditorState.allowMultipleSelections.of(true),
-                EditorView.theme({}, { dark: true }),
-                EditorView.lineWrapping,
-                scrollPastEnd(),
-                
-                indentOnInput(),
-                
-                bracketMatching(),
-                closeBrackets(),
-                
-                keymap.of([
-                    ...closeBracketsKeymap,
-                    ...defaultKeymap,
-                    ...searchKeymap,
-                    ...historyKeymap,
-                    ...completionKeymap
-                ]),
+                    highlightSpecialChars(),
+                    history(),
+                    
+                    drawSelection(),
+                    dropCursor(),
+                    rectangularSelection(),
+                    crosshairCursor(),
+                    
+                    EditorState.allowMultipleSelections.of(true),
+                    EditorView.theme({}, { dark: true }),
+                    EditorView.lineWrapping,
+                    scrollPastEnd(),
+                    
+                    indentOnInput(),
+                    
+                    bracketMatching(),
+                    closeBrackets(),
+                    
+                    keymap.of([
+                        ...closeBracketsKeymap,
+                        ...defaultKeymap,
+                        ...searchKeymap,
+                        ...historyKeymap,
+                        ...completionKeymap
+                    ]),
 
-                ...customPlugins(client),
+                    ...customPlugins(client),
 
-                // Update selection whenever our selection changes
-                EditorView.updateListener.of((v) => {
-                    if(v.selectionSet) selection.selection = v.state.selection;
-                }),
+                    // Update selection whenever our selection changes
+                    EditorView.updateListener.of((v) => {
+                        if(v.selectionSet) selection.selection = v.state.selection;
+                    }),
 
-                // Update scroll position when the dom event fires
-                EditorView.domEventHandlers({
-                    scroll(event, view) {
-                        selection.updateScrollPos(view);
-                    }
-                }),
+                    // Update scroll position when the dom event fires
+                    EditorView.domEventHandlers({
+                        scroll(event, view) {
+                            selection.updateScrollPos(view);
+                        }
+                    }),
 
-                yCollab(yText, sub.awareness, { undoManager })
-            ]
-        });
+                    yCollab(yText, sub.awareness, { undoManager })
+                ]
+            });
 
-        const view = new EditorView({
-            state,
-            parent: editorContainer
-        });
-        if(client.activePage) client.activePage.editorView = view;
+            const view = new EditorView({
+                state,
+                parent: editorContainer
+            });
+            if(client.activePage) client.activePage.editorView = view;
 
-        view.focus();
+            view.focus();
 
-        return () => {
-            view.destroy();
-            if(client.activePage) client.activePage.editorView = null;
-        };
+            return () => {
+                view.destroy();
+                if(client.activePage) client.activePage.editorView = null;
+            };
+        } catch(e) {
+            console.error("Failed to load page in editor:", e);
+            route.navigate("/home");
+        }
     });
 </script>
 

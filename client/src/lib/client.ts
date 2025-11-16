@@ -191,12 +191,21 @@ export class Client {
 
     public title = this.writableMetadataItem<string>("name");
 
+    public pageExists(id: string): boolean {
+        return this.pageTree.getNode(id) !== null;
+    }
+
     public loadPage(id: string, onLoad?: (() => void)): EditorInfo {
         if(this.activePage !== null) {
             this.activePage.sub.release();
             this.activePage.undoManager.destroy();
 
             this.activePage = null;
+        }
+
+        // If the page doesn't exist in the workspace, error
+        if(this.workspaceLoaded && !this.pageExists(id)) {
+            throw new Error("Page does not exist in workspace");
         }
 
         const doc = getSyncedDocument<DocumentSchema>(`doc:${id}`, onLoad);
@@ -287,6 +296,7 @@ export class Client {
     }
 
     private resubscribeMeta() {
+        if(!this.metadataStores) this.metadataStores = new Map(); // vite hot reload breaks without this (??)
         for(const { resubscribe } of this.metadataStores.values()) resubscribe();
     }
 

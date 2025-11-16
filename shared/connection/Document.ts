@@ -1,7 +1,7 @@
 import * as Y from "yjs";
 import { YMap } from "../typedYjs";
 
-export type DocumentID = string & { readonly __document_id: unique symbol };
+export type DocumentID = string & { readonly __brand: unique symbol };
 
 export type DocumentSchema = {
     content: Y.Text;

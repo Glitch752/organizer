@@ -1,4 +1,5 @@
 import { DocumentID } from "./Document";
+import { AwarenessStateMessage, AwarenessPeerAddedMessage, AwarenessPeerRemovedMessage, AwarenessUpdateMessage, ConnectAwarenessMessage } from "./messages/awareness";
 import { PermissionStatus } from "./Permissions"
 
 export type AuthenticatedMessage = {
@@ -19,17 +20,14 @@ export type SyncDataMessage = {
     data: Uint8Array
 };
 
-export type AwarenessDataMessage = {
-    type: "awareness-data",
-    doc: DocumentID,
-    data: any
-};
-
-export type ServerToClientMessage =
-    | AuthenticatedMessage
+export type ServerToClientMessage = |
+      AuthenticatedMessage
     | SyncDataMessage
     | InitialSyncMessage
-    | AwarenessDataMessage;
+    |
+      AwarenessStateMessage
+    | AwarenessPeerAddedMessage
+    | AwarenessPeerRemovedMessage;
 
 
 export type SyncBeginMessage = {
@@ -45,16 +43,13 @@ export type DocUpdateMessage = {
     doc: DocumentID,
     data: Uint8Array
 };
-export type AwarenessUpdateMessage = {
-    type: "awareness-update",
-    doc: DocumentID,
-    data: any
-};
 
-export type ClientToServerMessage =
-    | SyncBeginMessage
+export type ClientToServerMessage = |
+      SyncBeginMessage
     | SyncEndMessage
     | DocUpdateMessage
+    |
+      ConnectAwarenessMessage
     | AwarenessUpdateMessage;
 
 // The code we close WebSocket connections with when authentication fails

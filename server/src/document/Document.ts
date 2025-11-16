@@ -2,6 +2,7 @@ import * as Y from 'yjs';
 import type { DocumentID } from '@shared/connection/Document';
 import { StorageProvider } from './StorageProvider';
 import type { Connection } from '../Connection';
+import { AwarenessClientID } from '@shared/connection/messages/awareness';
 
 /**
  * A server-side Yjs document container that tracks open connections and
@@ -105,6 +106,21 @@ export class DocumentContainer {
                 } as any);
             } catch(e) {
                 console.error(`Failed to broadcast update for ${this.id} to ${conn.username}:`, e);
+            }
+        }
+    }
+
+    public awarenessUpdate(clientID: AwarenessClientID, state: Record<string, any>) {
+        for(const conn of this.connections) {
+            try {
+                conn.send({
+                    type: "awareness-state",
+                    doc: this.id,
+                    client: clientID,
+                    state: state
+                } as any);
+            } catch(e) {
+                console.error(`Failed to broadcast awareness update for ${this.id} to ${conn.username}:`, e);
             }
         }
     }

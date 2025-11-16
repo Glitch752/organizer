@@ -9,11 +9,14 @@ import { StorageProvider } from './document/StorageProvider';
 import { NoteStorageProvider } from './document/NoteStorageProvider';
 import { RawStorageProvider } from './document/RawStorageProvider';
 import { WorkspaceStorageProvider } from './document/WorkspaceStorageProvider';
+import { AwarenessClientID } from '@shared/connection/messages/awareness';
 
 export class Connection {
     public permissionStatus: PermissionStatus = PermissionStatus.Unauthenticated;
 
     public openDocuments: Set<DocumentID> = new Set();
+
+    private awarenessClientID: AwarenessClientID | null = null;
 
     private onMessageBound: (rawData: WebSocket.RawData, isBinary: boolean) => Promise<void>;
 
@@ -117,8 +120,32 @@ export class Connection {
                 await doc.applyUpdate(update, this);
                 break;
             }
+            case "connect-awareness": {
+                this.awarenessClientID = message.id;
+                break;
+            }
             case "awareness-update": {
-                // TODO: implement awareness handling if needed
+                // Only allow updates if we have the document opened and we have write permission
+                // Maybe awareness updates could make sense without write permission, but for now we keep it simple
+                if(!this.openDocuments.has(message.doc)) {
+                    console.warn(`Client sent update for non-open document ${message.doc}, ignoring`);
+                    return;
+                }
+                if(this.permissionStatus !== PermissionStatus.ReadWrite) {
+                    console.warn(`Client attempted to update document ${message.doc} without write permission, ignoring`);
+                    return;
+                }
+
+                if(!this.awarenessClientID) {
+                    console.warn("Client attempted to send awareness update without connecting awareness first, ignoring");
+                }
+
+                const doc = DocumentContainer.getExistingInstance(message.doc);
+                if(!doc) {
+                    console.warn(`Received update for non-existent container ${message.doc}`);
+                    return;
+                }
+                if(doc) doc.awarenessUpdate(this.awarenessClientID!, message.state);
                 break;
             }
         }

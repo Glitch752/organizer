@@ -68,6 +68,8 @@
         transform: translateX(0);
         transition: transform 200ms ease;
         grid-row: 2 / -1;
+
+        grid-template-rows: auto 1fr auto;
     }
     :global(.mobile.navOpen) {
         nav {
