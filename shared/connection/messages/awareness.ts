@@ -1,6 +1,6 @@
 import { DocumentID } from "../Document";
 
-export type AwarenessClientID = string & { readonly __brand: unique symbol };
+export type AwarenessClientID = number & { readonly __brand: unique symbol };
 
 //// Server to client
 
@@ -19,6 +19,7 @@ export type AwarenessStateMessage = {
     type: "awareness-state",
     doc: DocumentID,
     client: AwarenessClientID,
+    clock: number,
     state: Record<string, any>
 };
 
@@ -31,5 +32,6 @@ export type ConnectAwarenessMessage = {
 export type AwarenessUpdateMessage = {
     type: "awareness-update",
     doc: DocumentID,
+    clock: number,
     state: Record<string, any>
 };

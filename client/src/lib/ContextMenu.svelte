@@ -48,6 +48,29 @@
     }
 </script>
 
+<!-- TODO: Can we add this to the parent instead of having an  unnecessary div? -->
+<div role="region" oncontextmenu={rightClickContextMenu}>{@render children()}</div>
+
+{#if shown}
+<Portal>
+    <div class="interact-overlay" onclick={onPageClick} oncontextmenu={onPageClick} aria-hidden="true">
+        <nav use:getContextMenuDimension style="position: absolute; top: {anchorPosition.y}px; left: {anchorPosition.x}px">
+            <ul>
+                {#each items as item}
+                    {#if item.type == "hr"}
+                        <hr>
+                    {:else}
+                        <li>
+                            <button onclick={item.onClick}>{item.label}</button>
+                        </li>
+                    {/if}
+                {/each}
+            </ul>
+        </nav>
+    </div>
+</Portal>
+{/if}
+
 <style>
     * {
         padding: 0;
@@ -71,6 +94,7 @@
         overflow: hidden;
         flex-direction: column;
         padding: 3px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.45);
     }
     ul li {
         display: block;
@@ -98,26 +122,3 @@
         margin: 5px 0px;
     }
 </style>
-
-<!-- TODO: Can we add this to the parent instead of having an  unnecessary div? -->
-<div role="region" oncontextmenu={rightClickContextMenu}>{@render children()}</div>
-
-{#if shown}
-<Portal>
-    <div class="interact-overlay" onclick={onPageClick} oncontextmenu={onPageClick} aria-hidden="true">
-        <nav use:getContextMenuDimension style="position: absolute; top: {anchorPosition.y}px; left: {anchorPosition.x}px">
-            <ul>
-                {#each items as item}
-                    {#if item.type == "hr"}
-                        <hr>
-                    {:else}
-                        <li>
-                            <button onclick={item.onClick}>{item.label}</button>
-                        </li>
-                    {/if}
-                {/each}
-            </ul>
-        </nav>
-    </div>
-</Portal>
-{/if}

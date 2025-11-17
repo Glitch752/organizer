@@ -3,9 +3,11 @@ import * as Y from "yjs";
 import type { YDoc, YDocSchema } from "@shared/typedYjs";
 import type { ServerSocket } from "./socket";
 import { EventEmitter } from "../lib/util/EventEmitter";
-import type { AwarenessDataMessage, InitialSyncMessage, SyncDataMessage } from "@shared/connection/Messages";
+import type { InitialSyncMessage, SyncDataMessage } from "@shared/connection/Messages";
 import { writable, type Writable } from "svelte/store";
 import type { DocumentID } from "@shared/connection/Document";
+import type { AwarenessStateMessage } from "@shared/connection/messages/awareness";
+import { deepEqual } from "../lib/util";
 
 export enum SyncStatus {
     Error = 5,
@@ -176,7 +178,57 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         this.status = SyncStatus.Synced;
     }
 
-    public applyAwarenessUpdate(update: AwarenessDataMessage) {
-        // TODO
+    public applyAwarenessUpdate(update: AwarenessStateMessage) {
+        const timestamp = Date.now();
+        const added = []
+        const updated = []
+        const filteredUpdated = []
+        const removed = []
+
+        let { clock, client: clientID, state } = update;
+        
+        // const state = JSON.parse(decoding.readVarString(decoder))
+        const clientMeta = this.awareness.meta.get(clientID as number);
+        const prevState = this.awareness.states.get(clientID as number);
+        const currClock = clientMeta === undefined ? 0 : clientMeta.clock
+        if(currClock < clock || (currClock === clock && state === null && this.awareness.states.has(clientID))) {
+            if(state === null) {
+                // Never let a remote client remove this local state
+                if (clientID === this.awareness.clientID && this.awareness.getLocalState() != null) {
+                    // Remote client removed the local state. Do not remove state. Broadcast a message indicating
+                    // that this client still exists by increasing the clock
+                    clock++;
+                } else {
+                    this.awareness.states.delete(clientID);
+                }
+            } else {
+                this.awareness.states.set(clientID, state);
+            }
+            this.awareness.meta.set(clientID, {
+                clock,
+                lastUpdated: timestamp
+            });
+
+            if(clientMeta === undefined && state !== null) {
+                added.push(clientID)
+            } else if(clientMeta !== undefined && state === null) {
+                removed.push(clientID)
+            } else if(state !== null) {
+                if(!deepEqual(state, prevState)) {
+                    filteredUpdated.push(clientID)
+                }
+                updated.push(clientID)
+            }
+        }
+        if(added.length > 0 || filteredUpdated.length > 0 || removed.length > 0) {
+            this.awareness.emit('change', [{
+                added, updated: filteredUpdated, removed
+            }]);
+        }
+        if(added.length > 0 || updated.length > 0 || removed.length > 0) {
+            this.awareness.emit('update', [{
+                added, updated, removed
+            }]);
+        }
     }
 }

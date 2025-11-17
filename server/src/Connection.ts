@@ -122,6 +122,7 @@ export class Connection {
             }
             case "connect-awareness": {
                 this.awarenessClientID = message.id;
+                
                 break;
             }
             case "awareness-update": {
