@@ -27,7 +27,7 @@ export class ServerSocket extends EventEmitter<ServerSocketEvents> {
                     if(doc) doc.applyUpdate(msg.data);
                     break;
                 }
-                case "awareness-data": {
+                case "awareness-state": {
                     const doc = this.registeredDocuments.get(msg.doc);
                     if(doc) doc.applyAwarenessUpdate(msg);
                     break;

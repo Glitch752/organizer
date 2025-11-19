@@ -212,6 +212,7 @@ export class Client {
         const yText = doc.doc.getText("content");
         const undoManager = new Y.UndoManager(yText);
 
+        console.log(doc.awareness);
         doc.awareness.setLocalStateField("user", {
             name: 'user' + Math.floor(Math.random() * 100),
             color: this.sessionColor.color,

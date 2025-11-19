@@ -6,7 +6,7 @@ import { EventEmitter } from "../lib/util/EventEmitter";
 import type { InitialSyncMessage, SyncDataMessage } from "@shared/connection/Messages";
 import { writable, type Writable } from "svelte/store";
 import type { DocumentID } from "@shared/connection/Document";
-import type { AwarenessStateMessage } from "@shared/connection/messages/awareness";
+import type { AwarenessClientID, AwarenessStateMessage } from "@shared/connection/messages/awareness";
 import { deepEqual } from "../lib/util";
 
 export enum SyncStatus {
@@ -62,6 +62,11 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
     // Main data
     public doc: YDoc<DocType>;
     public awareness: Awareness;
+    private awarenessConnected: boolean = false;
+    private get clientID(): AwarenessClientID {
+        return this.awareness.clientID as AwarenessClientID;
+    }
+
     private _status: SyncStatus = SyncStatus.Disconnected;
     public get status(): SyncStatus {
         return this._status;
@@ -75,6 +80,11 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
     // New: suppress sending updates originated from remote applyUpdate
     private suppressLocalUpdates: boolean = false;
     private onUpdateBound: ((update: Uint8Array, origin?: any) => void) | null = null;
+    private onAwarenessUpdateBound: ((update: {
+        added: number[],
+        updated: number[],
+        removed: number[]
+    }, origin?: any) => void) | null = null;
 
     private onloadHandlers: (() => void)[] = [];
     public onload(cb: () => void) {
@@ -93,7 +103,7 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         this.doc = new Y.Doc() as unknown as YDoc<DocType>;
         this.awareness = new Awareness(this.doc as unknown as Y.Doc);
 
-        this.awareness.setLocalState(null);
+        this.awareness.setLocalState({});
 
         // Setup update handler to propagate local Yjs updates to the server
         this.onUpdateBound = (update: Uint8Array) => {
@@ -104,11 +114,23 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
                 this.socket.sendMessage({ type: "doc-update", doc: this.id, data: update });
                 // Mark we have unsynced changes until the server 'synced' state is received
                 this.status = SyncStatus.UnsyncedChanges;
-            } catch (e) {
+            } catch(e) {
                 console.error("Failed to send doc update to server", e);
             }
         };
         this.doc.on('update', this.onUpdateBound);
+
+        this.onAwarenessUpdateBound = (update, origin) => {
+            if(update.updated.length === 0) return;
+            if(!update.updated.includes(this.clientID)) return;
+
+            try {
+                this.sendAwarenessUpdate();
+            } catch(e) {
+                console.error("Failed to send awareness update to server", e);
+            }
+        };
+        this.awareness.on('update', this.onAwarenessUpdateBound);
 
         this.connect();
     }
@@ -133,6 +155,11 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         console.log(`Disconnecting from document ${this.id}`);
         this.status = SyncStatus.Disconnected;
 
+        if(this.onAwarenessUpdateBound) {
+            try { this.awareness.off('update', this.onAwarenessUpdateBound); } catch {}
+            this.onAwarenessUpdateBound = null;
+        }
+        
         this.awareness.destroy();
 
         if(this.onUpdateBound) {
@@ -143,6 +170,23 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         this.doc.destroy();
 
         this.socket.disconnectFromDocument(this);
+    }
+
+    private sendAwarenessUpdate() {
+        if(!this.awarenessConnected) {
+            this.socket.sendMessage({
+                type: "connect-awareness",
+                id: this.clientID
+            })
+            this.awarenessConnected = true;
+        }
+
+        this.socket.sendMessage({
+            type: "awareness-update",
+            clock: this.awareness.meta.get(this.clientID)?.clock ?? 0,
+            doc: this.id,
+            state: this.awareness.getLocalState()!
+        });
     }
 
     public static initialSync(message: InitialSyncMessage) {
@@ -181,11 +225,12 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
     }
 
     public applyAwarenessUpdate(update: AwarenessStateMessage) {
+        console.log(update);
         const timestamp = Date.now();
-        const added = []
-        const updated = []
-        const filteredUpdated = []
-        const removed = []
+        const added = [];
+        const updated = [];
+        const filteredUpdated = [];
+        const removed = [];
 
         let { clock, client: clientID, state } = update;
         
@@ -196,7 +241,7 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         if(currClock < clock || (currClock === clock && state === null && this.awareness.states.has(clientID))) {
             if(state === null) {
                 // Never let a remote client remove this local state
-                if (clientID === this.awareness.clientID && this.awareness.getLocalState() != null) {
+                if(clientID === this.clientID && this.awareness.getLocalState() != null) {
                     // Remote client removed the local state. Do not remove state. Broadcast a message indicating
                     // that this client still exists by increasing the clock
                     clock++;
