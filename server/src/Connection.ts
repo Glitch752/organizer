@@ -16,7 +16,7 @@ export class Connection {
 
     public openDocuments: Set<DocumentID> = new Set();
 
-    private awarenessClientID: AwarenessClientID | null = null;
+    public awarenessClientID: AwarenessClientID | null = null;
 
     private onMessageBound: (rawData: WebSocket.RawData, isBinary: boolean) => Promise<void>;
 
@@ -122,7 +122,6 @@ export class Connection {
             }
             case "connect-awareness": {
                 this.awarenessClientID = message.id;
-                
                 break;
             }
             case "awareness-update": {
@@ -146,7 +145,7 @@ export class Connection {
                     console.warn(`Received update for non-existent container ${message.doc}`);
                     return;
                 }
-                if(doc) doc.awarenessUpdate(this.awarenessClientID!, message.state);
+                if(doc) doc.awarenessUpdate(this.awarenessClientID!, message.state, message.clock);
                 break;
             }
         }

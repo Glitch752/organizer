@@ -93,6 +93,8 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         this.doc = new Y.Doc() as unknown as YDoc<DocType>;
         this.awareness = new Awareness(this.doc as unknown as Y.Doc);
 
+        this.awareness.setLocalState(null);
+
         // Setup update handler to propagate local Yjs updates to the server
         this.onUpdateBound = (update: Uint8Array) => {
             if(this.suppressLocalUpdates) return;

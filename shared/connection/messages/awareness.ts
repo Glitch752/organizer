@@ -4,12 +4,6 @@ export type AwarenessClientID = number & { readonly __brand: unique symbol };
 
 //// Server to client
 
-export type AwarenessPeerAddedMessage = {
-    type: "awareness-peer-added",
-    doc: DocumentID,
-    id: AwarenessClientID
-};
-
 export type AwarenessPeerRemovedMessage = {
     type: "awareness-peer-removed",
     doc: DocumentID,

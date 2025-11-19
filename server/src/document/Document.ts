@@ -81,6 +81,17 @@ export class DocumentContainer {
         if(!this.connections.has(conn)) return;
         this.connections.delete(conn);
 
+        if(conn.awarenessClientID !== null) {
+            // Notify other clients that this peer disconnected
+            for(const otherConn of this.connections) {
+                otherConn.send({
+                    type: "awareness-peer-removed",
+                    doc: this.id,
+                    id: conn.awarenessClientID
+                });
+            }
+        }
+
         if(this.connections.size === 0) {
             // Keep the document in memory briefly for reconnects
             this.closingTimeout = setTimeout(() => {
@@ -110,14 +121,15 @@ export class DocumentContainer {
         }
     }
 
-    public awarenessUpdate(clientID: AwarenessClientID, state: Record<string, any>) {
+    public awarenessUpdate(clientID: AwarenessClientID, state: Record<string, any>, clock: number) {
         for(const conn of this.connections) {
             try {
                 conn.send({
                     type: "awareness-state",
                     doc: this.id,
                     client: clientID,
-                    state: state
+                    state: state,
+                    clock
                 } as any);
             } catch(e) {
                 console.error(`Failed to broadcast awareness update for ${this.id} to ${conn.username}:`, e);

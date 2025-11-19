@@ -1,5 +1,5 @@
 import { DocumentID } from "./Document";
-import { AwarenessStateMessage, AwarenessPeerAddedMessage, AwarenessPeerRemovedMessage, AwarenessUpdateMessage, ConnectAwarenessMessage } from "./messages/awareness";
+import { AwarenessStateMessage, AwarenessPeerRemovedMessage, AwarenessUpdateMessage, ConnectAwarenessMessage } from "./messages/awareness";
 import { PermissionStatus } from "./Permissions"
 
 export type AuthenticatedMessage = {
@@ -26,7 +26,6 @@ export type ServerToClientMessage = |
     | InitialSyncMessage
     |
       AwarenessStateMessage
-    | AwarenessPeerAddedMessage
     | AwarenessPeerRemovedMessage;
 
 
