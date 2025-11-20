@@ -20,12 +20,12 @@ export type SyncDataMessage = {
     data: Uint8Array
 };
 
-export type ServerToClientMessage = |
-      AuthenticatedMessage
+export type ServerToClientMessage =
+    | AuthenticatedMessage
     | SyncDataMessage
     | InitialSyncMessage
-    |
-      AwarenessStateMessage
+    
+    | AwarenessStateMessage
     | AwarenessPeerRemovedMessage;
 
 

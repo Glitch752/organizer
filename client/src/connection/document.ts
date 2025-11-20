@@ -7,7 +7,7 @@ import type { InitialSyncMessage, SyncDataMessage } from "@shared/connection/Mes
 import { writable, type Writable } from "svelte/store";
 import type { DocumentID } from "@shared/connection/Document";
 import type { AwarenessClientID, AwarenessStateMessage } from "@shared/connection/messages/awareness";
-import { deepEqual } from "../lib/util";
+import { deepEqual } from "@shared/util";
 
 export enum SyncStatus {
     Error = 5,
@@ -103,7 +103,7 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         this.doc = new Y.Doc() as unknown as YDoc<DocType>;
         this.awareness = new Awareness(this.doc as unknown as Y.Doc);
 
-        this.awareness.setLocalState({});
+        this.awareness.setLocalState(null);
 
         // Setup update handler to propagate local Yjs updates to the server
         this.onUpdateBound = (update: Uint8Array) => {
@@ -123,6 +123,8 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         this.onAwarenessUpdateBound = (update, origin) => {
             if(update.updated.length === 0) return;
             if(!update.updated.includes(this.clientID)) return;
+
+            console.log(update, this.clientID);
 
             try {
                 this.sendAwarenessUpdate();
@@ -206,12 +208,6 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         this.onloadHandlers = [];
     }
 
-    public static syncData(message: SyncDataMessage) {
-        if(this.instances.has(message.doc)) {
-            this.instances.get(message.doc)!.applyUpdate(message.data);
-        }
-    }
-
     public applyUpdate(update: Uint8Array) {
         // Suppress the update handler while applying remote updates
         this.suppressLocalUpdates = true;
@@ -225,7 +221,6 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
     }
 
     public applyAwarenessUpdate(update: AwarenessStateMessage) {
-        console.log(update);
         const timestamp = Date.now();
         const added = [];
         const updated = [];
@@ -277,5 +272,15 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
                 added, updated, removed
             }]);
         }
+    }
+
+    public removeAwarenessPeer(id: AwarenessClientID) {
+        this.applyAwarenessUpdate({
+            type: "awareness-state",
+            client: id,
+            clock: this.awareness.meta.get(id)?.clock ?? 0,
+            doc: this.id,
+            state: null
+        });
     }
 }

@@ -33,16 +33,30 @@ socket.on("close", ({ code, reason }) => {
 
 socket.on("message", (msg) => {
     switch(msg.type) {
-        case "authenticated":
+        case "authenticated": {
             console.log(`Authenticated as ${msg.username} with permissions ${PermissionStatus[msg.permissions]}`);
             username.set(msg.username);
             break;
-        case "initial-sync":
+        }
+        case "initial-sync": {
             SyncedDocument.initialSync(msg);
             break;
-        case "sync-data":
-            SyncedDocument.syncData(msg);
+        }
+        case "sync-data": {
+            const doc = socket.registeredDocuments.get(msg.doc);
+            if(doc) doc.applyUpdate(msg.data);
             break;
+        }
+        case "awareness-state": {
+            const doc = socket.registeredDocuments.get(msg.doc);
+            if(doc) doc.applyAwarenessUpdate(msg);
+            break;
+        }
+        case "awareness-peer-removed": {
+            const doc = socket.registeredDocuments.get(msg.doc);
+            if(doc) doc.removeAwarenessPeer(msg.id);
+            break;
+        }
     }
 });
 

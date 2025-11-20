@@ -85,6 +85,11 @@ export class Connection {
                     doc: message.doc,
                     data: update
                 } as any);
+
+                // If awareness is connected, send existing awareness states
+                if(this.awarenessClientID) {
+                    doc.sendAwarenessState(this.awarenessClientID, this);
+                }
                 break;
             }
             case "sync-end": {
@@ -122,6 +127,11 @@ export class Connection {
             }
             case "connect-awareness": {
                 this.awarenessClientID = message.id;
+                // Send existing awareness states for all of the connected docs
+                for(const docId of this.openDocuments) {
+                    const doc = DocumentContainer.getExistingInstance(docId);
+                    if(doc) doc.sendAwarenessState(message.id, this);
+                }
                 break;
             }
             case "awareness-update": {
@@ -145,7 +155,7 @@ export class Connection {
                     console.warn(`Received update for non-existent container ${message.doc}`);
                     return;
                 }
-                if(doc) doc.awarenessUpdate(this.awarenessClientID!, message.state, message.clock);
+                if(doc) doc.awarenessUpdate(this.awarenessClientID!, message);
                 break;
             }
         }

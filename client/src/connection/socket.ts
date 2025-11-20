@@ -13,27 +13,12 @@ type ServerSocketEvents = {
 
 export class ServerSocket extends EventEmitter<ServerSocketEvents> {
     private ws: WebSocket;
-    private registeredDocuments: Map<string, SyncedDocument<any>> = new Map();
     private queuedMessages: ClientToServerMessage[] = [];
+    public registeredDocuments: Map<string, SyncedDocument<any>> = new Map();
 
     constructor(private url: string) {
         super();
         this.ws = this.openWebsocket();
-
-        this.on("message", (msg) => {
-            switch(msg.type) {
-                case "sync-data": {
-                    const doc = this.registeredDocuments.get(msg.doc);
-                    if(doc) doc.applyUpdate(msg.data);
-                    break;
-                }
-                case "awareness-state": {
-                    const doc = this.registeredDocuments.get(msg.doc);
-                    if(doc) doc.applyAwarenessUpdate(msg);
-                    break;
-                }
-            }
-        })
     }
 
     private openWebsocket(): WebSocket {

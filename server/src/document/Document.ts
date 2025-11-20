@@ -1,8 +1,10 @@
+import { Awareness } from "y-protocols/awareness.js";
 import * as Y from 'yjs';
 import type { DocumentID } from '@shared/connection/Document';
 import { StorageProvider } from './StorageProvider';
 import type { Connection } from '../Connection';
-import { AwarenessClientID } from '@shared/connection/messages/awareness';
+import { AwarenessClientID, AwarenessUpdateMessage } from '@shared/connection/messages/awareness';
+import { deepEqual } from "@shared/util";
 
 /**
  * A server-side Yjs document container that tracks open connections and
@@ -18,6 +20,8 @@ export class DocumentContainer {
     private connections: Set<Connection> = new Set();
 
     private doc: Y.Doc;
+    private awareness: Awareness;
+
     private provider: StorageProvider;
     private closingTimeout: NodeJS.Timeout | null = null;
 
@@ -48,6 +52,7 @@ export class DocumentContainer {
     private constructor(public readonly id: DocumentID, provider: StorageProvider) {
         this.provider = provider;
         this.doc = new Y.Doc();
+        this.awareness = new Awareness(this.doc);
 
         // Setup observers to persist the document when changed
         this.doc.on('update', async (update: Uint8Array) => {
@@ -90,6 +95,12 @@ export class DocumentContainer {
                     id: conn.awarenessClientID
                 });
             }
+            this.applyAwarenessUpdate(conn.awarenessClientID, {
+                type: "awareness-update",
+                clock: this.awareness.meta.get(conn.awarenessClientID)?.clock ?? 0,
+                doc: this.id,
+                state: null
+            });
         }
 
         if(this.connections.size === 0) {
@@ -121,19 +132,80 @@ export class DocumentContainer {
         }
     }
 
-    public awarenessUpdate(clientID: AwarenessClientID, state: Record<string, any>, clock: number) {
+    public awarenessUpdate(clientID: AwarenessClientID, message: AwarenessUpdateMessage) {
+        this.applyAwarenessUpdate(clientID, message);
         for(const conn of this.connections) {
             try {
                 conn.send({
                     type: "awareness-state",
                     doc: this.id,
                     client: clientID,
-                    state: state,
-                    clock
+                    state: message.state,
+                    clock: message.clock
                 } as any);
             } catch(e) {
                 console.error(`Failed to broadcast awareness update for ${this.id} to ${conn.username}:`, e);
             }
+        }
+    }
+
+    private applyAwarenessUpdate(clientID: AwarenessClientID, update: AwarenessUpdateMessage) {
+        const timestamp = Date.now();
+        const added = [];
+        const updated = [];
+        const filteredUpdated = [];
+        const removed = [];
+
+        let { clock, state } = update;
+        
+        // const state = JSON.parse(decoding.readVarString(decoder))
+        const clientMeta = this.awareness.meta.get(clientID as number);
+        const prevState = this.awareness.states.get(clientID as number);
+        const currClock = clientMeta === undefined ? 0 : clientMeta.clock
+        if(currClock < clock || (currClock === clock && state === null && this.awareness.states.has(clientID))) {
+            if(state === null) {
+                this.awareness.states.delete(clientID);
+            } else {
+                this.awareness.states.set(clientID, state);
+            }
+            this.awareness.meta.set(clientID, {
+                clock,
+                lastUpdated: timestamp
+            });
+
+            if(clientMeta === undefined && state !== null) {
+                added.push(clientID)
+            } else if(clientMeta !== undefined && state === null) {
+                removed.push(clientID)
+            } else if(state !== null) {
+                if(!deepEqual(state, prevState)) {
+                    filteredUpdated.push(clientID)
+                }
+                updated.push(clientID)
+            }
+        }
+        if(added.length > 0 || filteredUpdated.length > 0 || removed.length > 0) {
+            this.awareness.emit('change', [{
+                added, updated: filteredUpdated, removed
+            }]);
+        }
+        if(added.length > 0 || updated.length > 0 || removed.length > 0) {
+            this.awareness.emit('update', [{
+                added, updated, removed
+            }]);
+        }
+    }
+
+    public sendAwarenessState(clientID: AwarenessClientID, conn: Connection) {
+        for(const [remoteClient, state] of this.awareness.getStates()) {
+            if(remoteClient === clientID) continue;
+            conn.send({
+                type: "awareness-state",
+                doc: this.id,
+                client: remoteClient,
+                state: state ?? null,
+                clock: this.awareness.meta.get(remoteClient)?.clock ?? 0
+            });
         }
     }
 
@@ -146,6 +218,8 @@ export class DocumentContainer {
         }
 
         this.doc.destroy();
+        this.awareness.destroy();
+
         DocumentContainer.instances.delete(this.id);
     }
 

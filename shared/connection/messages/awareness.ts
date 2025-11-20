@@ -14,7 +14,7 @@ export type AwarenessStateMessage = {
     doc: DocumentID,
     client: AwarenessClientID,
     clock: number,
-    state: Record<string, any>
+    state: Record<string, any> | null
 };
 
 //// Client to server
@@ -27,5 +27,5 @@ export type AwarenessUpdateMessage = {
     type: "awareness-update",
     doc: DocumentID,
     clock: number,
-    state: Record<string, any>
+    state: Record<string, any> | null
 };
