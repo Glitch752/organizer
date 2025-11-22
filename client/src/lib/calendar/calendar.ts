@@ -3,6 +3,8 @@ import type { Client } from "../client";
 import { AttributeType, EventConditionType, TimeType, type EventCondition, type EventTime } from "@shared/connection/attributes";
 import { getWeekOfMonth, parsePlainDate, parsePlainMonthDay, parseZonedDateTime, parseZonedTimeForDate } from "../datetime/time";
 import type { HexString } from "@shared/connection/attributes/color";
+import type { SyncedDocument } from "../../connection/document";
+import type { YArray, YMap } from "@shared/typedYjs";
 
 export type CalendarObject = ({
     type: "deadline";
@@ -29,6 +31,50 @@ export type CalendarObject = ({
 function undefEmpty(str: string | undefined): string | undefined {
     if(str?.trim().length === 0) return undefined;
     return str;
+}
+
+export enum CalendarViewType {
+    Year,
+    Month,
+    Week
+}
+
+export enum CalendarArchiveVersion {
+    V1 = 1
+}
+
+type V1ArchiveEvent = {
+    
+}
+
+type CalendarArchiveDoc = {
+    "meta": YMap<{
+        /** Year this archive stores */
+        year: number;
+        /** Month this archive stores. Temporal format - 1-based */
+        month: number;
+
+        createdAt: string;
+        updatedAt: string;
+
+        version: CalendarArchiveVersion
+    }>,
+    "events-v1": YArray<V1ArchiveEvent>
+};
+
+export class CalendarLoadingManager {
+    private calendarArchiveDocuments: Map<number, SyncedDocument<CalendarArchiveDoc>> = new Map();
+
+    constructor(
+        private client: Client,
+        private viewType: CalendarViewType
+    ) {
+
+    }
+
+    public unload() {
+
+    }
 }
 
 export async function getCalendarObjects(
