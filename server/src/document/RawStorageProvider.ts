@@ -2,7 +2,7 @@ import { StorageProvider } from "./StorageProvider";
 import { DocumentID } from "@shared/connection/Document";
 import { DataStore } from "../DataStore";
 import * as Y from "yjs";
-import { YArray } from "@shared/typedYjs";
+import { YArray, YDocSchema, YMap } from "@shared/typedYjs";
 
 export type TopLevelType = "text" | "array" | "map";
 
@@ -32,6 +32,13 @@ type TopLevelTypes = {
     /** If null, skip. */
     [key: string]: TopLevelType | null
 };
+
+export type DocSchemaToTopLevel<T extends YDocSchema> = {
+    [K in keyof T]: T[K] extends Y.Text ? "text" :
+                    T[K] extends YArray<any> ? "array" :
+                    T[K] extends YMap<any> ? "map" :
+                    null;
+}
 
 /**
  * RawStorageProvider persists YDoc top-level elements into a JSON file under
@@ -200,5 +207,9 @@ export class RawStorageProvider implements StorageProvider {
             id,
             data
         );
+    }
+
+    public createInitialDocument(id: DocumentID, doc: Y.Doc): void {
+        // No-op by default
     }
 }

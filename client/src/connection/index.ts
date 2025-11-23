@@ -13,12 +13,23 @@ console.log(`Websocket URL: ${websocketURL}`);
 export let socket = new ServerSocket(websocketURL);
 export let username = writable<string | null>(null);
 
-export function getSyncedDocument<DocType extends YDocSchema>(id: string, onLoad?: (() => void)): SyncedDocument<DocType> {
+export function getSyncedDocument<DocType extends YDocSchema>(
+    id: string,
+    onLoad?: ((instance: SyncedDocument<DocType>) => void)
+): SyncedDocument<DocType> {
     const instance = SyncedDocument.getInstance<DocType>(id as DocumentID, socket);
 
-    if(onLoad) instance.onload(onLoad);
+    if(onLoad) instance.onload(onLoad.bind(null, instance));
     
     return instance;
+}
+
+export async function getSyncedDocumentAsync<DocType extends YDocSchema>(id: string): Promise<SyncedDocument<DocType>> {
+    return new Promise((resolve) => {
+        getSyncedDocument<DocType>(id as DocumentID, (instance) => {
+            resolve(instance);
+        });
+    });
 }
 
 socket.on("close", ({ code, reason }) => {

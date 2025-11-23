@@ -2,10 +2,11 @@
     import type { CalendarDisplay } from "../../stores/calendar";
     import { Temporal } from "@js-temporal/polyfill";
     import { getCalendarDays } from "../datetime/months";
-    import { getCalendarObjects } from "./calendar";
     import { client } from "../client";
     import CalendarMonthObject from "./CalendarMonthObject.svelte";
-  import { measurePromise } from "../util/time";
+    import { measurePromise } from "../util/time";
+    import { CalendarLoadingManager, CalendarViewType } from "./calendar";
+    import { onDestroy } from "svelte";
 
     let {
         display = $bindable()
@@ -21,12 +22,15 @@
     const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const shortWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+    const loadingManager = new CalendarLoadingManager(client, CalendarViewType.Month);
+    onDestroy(() => loadingManager.unload());
+
     async function getDays(selectedDay: { year: number; month: number; day: number; }) {
         const days = getCalendarDays(selectedDay.year, selectedDay.month);
         return measurePromise(Promise.all(days.map(async d => ({
             month: d.month,
             day: d.day,
-            objects: await getCalendarObjects(client, Temporal.PlainDate.from({
+            objects: await loadingManager.getCalendarObjects(Temporal.PlainDate.from({
                 year: d.year,
                 month: d.month,
                 day: d.day

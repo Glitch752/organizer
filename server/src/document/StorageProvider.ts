@@ -14,4 +14,9 @@ export interface StorageProvider {
      * update.
      */
     save(id: DocumentID, doc: Y.Doc): Promise<void>;
+
+    /**
+     * Create an initial document state if none exists.
+     */
+    createInitialDocument(id: DocumentID, doc: Y.Doc): void;
 }

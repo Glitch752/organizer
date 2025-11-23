@@ -13,7 +13,7 @@ import { isMobile } from "./util/device.svelte";
 import type { SyncedDocument } from "../connection/document";
 import { getSyncedDocument } from "../connection";
 import type { PageMeta, WorkspaceSchema } from "@shared/connection/Workspace";
-import { type DocumentSchema } from "@shared/connection/Document";
+import { type NoteSchema } from "@shared/connection/Document";
 
 type UserColor = {
     color: string,
@@ -208,7 +208,7 @@ export class Client {
             throw new Error("Page does not exist in workspace");
         }
 
-        const doc = getSyncedDocument<DocumentSchema>(`doc:${id}`, onLoad);
+        const doc = getSyncedDocument<NoteSchema>(`page:${id}`, onLoad);
         const yText = doc.doc.getText("content");
         const undoManager = new Y.UndoManager(yText);
 

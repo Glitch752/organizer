@@ -67,7 +67,10 @@ export class DocumentContainer {
 
     public async load() {
         const update = await this.provider.load(this.id);
+        
         if(update) Y.applyUpdate(this.doc, update);
+        else this.provider.createInitialDocument(this.id, this.doc);
+
         return update !== null;
     }
 

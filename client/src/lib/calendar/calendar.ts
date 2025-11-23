@@ -4,8 +4,8 @@ import { AttributeType, EventConditionType, TimeType, type EventCondition, type 
 import { getWeekOfMonth, makePlainDate, parsePlainDate, parsePlainMonthDay, parsePlainTime, parseZonedDateTime, parseZonedTimeForDate } from "../datetime/time";
 import type { HexString } from "@shared/connection/attributes/color";
 import { SyncedDocument } from "../../connection/document";
-import type { CalendarArchiveDoc } from "@shared/calendar/archive";
-import { getSyncedDocument } from "../../connection";
+import type { CalendarArchiveSchema } from "@shared/calendar/archive";
+import { getSyncedDocumentAsync } from "../../connection";
 
 export type CalendarObject = ({
     type: "deadline";
@@ -45,7 +45,13 @@ export class CalendarLoadingManager {
      * The archive documents, which store the events on past days, that are open.  
      * Keyed by `${year}-${month}` (month is 1-based).
      */
-    private calendarArchiveDocuments: Map<string, SyncedDocument<CalendarArchiveDoc>> = new Map();
+    private calendarArchiveDocuments: Map<string, SyncedDocument<CalendarArchiveSchema>> = new Map();
+    /**
+     * Promises for loading archive documents that are in the process of being loaded.  
+     * Prevents duplicate loads.  
+     * Keyed by `${year}-${month}` (month is 1-based).
+     */
+    private _loadingArchiveDocuments: Map<string, Promise<void>> = new Map();
 
     constructor(
         private client: Client,
@@ -58,16 +64,18 @@ export class CalendarLoadingManager {
 
         // Ensure the archive for this date is loaded
         const archiveKey = `${date.year}-${date.month}`;
+        if(this._loadingArchiveDocuments.has(archiveKey)) {
+            await this._loadingArchiveDocuments.get(archiveKey);
+        }
         if(!this.calendarArchiveDocuments.has(archiveKey)) {
-            const doc = new Promise<SyncedDocument<CalendarArchiveDoc>>((resolve) => {
-                const doc = getSyncedDocument<CalendarArchiveDoc>(
-                    `calendar-archive:${date.year}:${date.month}`,
-                    () => {
-                        resolve(doc);
-                    });
-            });
+            const loadPromise = (async () => {
+                const doc = await getSyncedDocumentAsync<CalendarArchiveSchema>(
+                    `calendar-archive:${date.year}:${date.month}`);
 
-            this.calendarArchiveDocuments.set(archiveKey, await doc);
+                this.calendarArchiveDocuments.set(archiveKey, doc);
+                this._loadingArchiveDocuments.delete(archiveKey);
+            })();
+            this._loadingArchiveDocuments.set(archiveKey, loadPromise);
         }
 
         const calendarArchiveDoc = this.calendarArchiveDocuments.get(archiveKey)!;

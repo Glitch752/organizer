@@ -99,6 +99,8 @@
         list-style: none;
         padding: 0;
         margin: 0;
+        overflow-y: auto;
+        max-height: 20rem;
     }
     .doc {
         display: flex;

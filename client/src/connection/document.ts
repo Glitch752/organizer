@@ -48,6 +48,7 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         return Array.from(this.instances.values());
     }
 
+    private static _globalSyncStatus: SyncStatus = SyncStatus.Disconnected;
     public static globalSyncStatus: Writable<SyncStatus> = writable(SyncStatus.Disconnected);
     private static updateGlobalSyncStatus() {
         let highestStatus = SyncStatus.None;
@@ -56,7 +57,15 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
                 highestStatus = doc.status;
             }
         }
-        this.globalSyncStatus.set(highestStatus);
+
+        if(this._globalSyncStatus !== highestStatus) {
+            this._globalSyncStatus = highestStatus;
+            // We use a timeout to avoid hitting Svelte's unsafe state mutation if indirectly
+            // calling this from derived state.
+            setTimeout(() => {
+                this.globalSyncStatus.set(highestStatus);
+            }, 0);
+        }
     }
 
     // Main data

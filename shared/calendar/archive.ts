@@ -26,7 +26,7 @@ export enum CalendarArchiveVersion {
     V1 = 1
 }
 
-export type CalendarArchiveDoc = {
+export type CalendarArchiveSchema = {
     "meta": YMap<{
         /** Year this archive stores */
         year: number;

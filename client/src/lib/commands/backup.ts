@@ -4,11 +4,11 @@ import { type YTreeNode } from "../../../../shared/ytree";
 import type { SyncedDocument } from "../../connection/document";
 import type { PageMeta } from "@shared/connection/Workspace";
 import { getSyncedDocument } from "../../connection";
-import type { DocumentSchema } from "@shared/connection/Document";
+import type { NoteSchema } from "@shared/connection/Document";
 
 async function addPages(zip: JSZip, node: YTreeNode<PageMeta>, client: Client) {
-    const doc = await new Promise<SyncedDocument<DocumentSchema>>((resolve) => {
-        const val = getSyncedDocument<DocumentSchema>(`doc:${node.id()}`, () => {
+    const doc = await new Promise<SyncedDocument<NoteSchema>>((resolve) => {
+        const val = getSyncedDocument<NoteSchema>(`page:${node.id()}`, () => {
             resolve(val);
         });
     });

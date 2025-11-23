@@ -51,10 +51,10 @@ const backend = new Backend();
 //         if(data.documentName === "global") {
 //             const tree = new YTree(data.document.getMap("pages") as YMap<any>);
             
-//             const nodes = new Set(tree.getAllNodes().map(n => `doc:${n.id()}`));
+//             const nodes = new Set(tree.getAllNodes().map(n => `page:${n.id()}`));
 //             const docs = new Set(
 //                 (await sqlite.getDocumentNames())
-//                     .filter(n => n.startsWith("doc:"))
+//                     .filter(n => n.startsWith("page:"))
 //             );
             
 //             const deletedDocs = docs.difference(nodes);

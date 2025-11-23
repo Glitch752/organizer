@@ -1,9 +1,10 @@
 <script lang="ts">
     import type { CalendarDisplay } from "../../stores/calendar";
     import { Temporal } from "@js-temporal/polyfill";
-    import { getCalendarObjects } from "./calendar";
     import type { Client } from "../client";
     import CalendarWeekObject, { timeToPosition } from "./CalendarWeekObject.svelte";
+    import { onDestroy } from "svelte";
+    import { CalendarLoadingManager, CalendarViewType } from "./calendar";
 
     let {
         display = $bindable(), client
@@ -13,6 +14,9 @@
 
     const shortWeekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+    const loadingManager = new CalendarLoadingManager(client, CalendarViewType.Week);
+    onDestroy(() => loadingManager.unload());
+    
     async function getWeekDays(selectedDay: { year: number; month: number; day: number; }) {
         const selectedDate = Temporal.PlainDate.from({
             year: selectedDay.year,
@@ -32,7 +36,7 @@
                 dayNumber: date.day,
                 isToday: isToday(date),
                 isSelected: date.equals(selectedDate),
-                calendarObjects: await getCalendarObjects(client, date, true)
+                calendarObjects: await loadingManager.getCalendarObjects(date)
             };
         }));
     }
