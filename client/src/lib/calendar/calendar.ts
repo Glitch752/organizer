@@ -1,10 +1,11 @@
 import { Temporal } from "@js-temporal/polyfill";
 import type { Client } from "../client";
 import { AttributeType, EventConditionType, TimeType, type EventCondition, type EventTime } from "@shared/connection/attributes";
-import { getWeekOfMonth, parsePlainDate, parsePlainMonthDay, parseZonedDateTime, parseZonedTimeForDate } from "../datetime/time";
+import { getWeekOfMonth, makePlainDate, parsePlainDate, parsePlainMonthDay, parsePlainTime, parseZonedDateTime, parseZonedTimeForDate } from "../datetime/time";
 import type { HexString } from "@shared/connection/attributes/color";
-import type { SyncedDocument } from "../../connection/document";
-import type { YArray, YMap } from "@shared/typedYjs";
+import { SyncedDocument } from "../../connection/document";
+import type { CalendarArchiveDoc } from "@shared/calendar/archive";
+import { getSyncedDocument } from "../../connection";
 
 export type CalendarObject = ({
     type: "deadline";
@@ -37,103 +38,143 @@ export enum CalendarViewType {
     Year,
     Month,
     Week
-}
-
-export enum CalendarArchiveVersion {
-    V1 = 1
-}
-
-type V1ArchiveEvent = {
-    
-}
-
-type CalendarArchiveDoc = {
-    "meta": YMap<{
-        /** Year this archive stores */
-        year: number;
-        /** Month this archive stores. Temporal format - 1-based */
-        month: number;
-
-        createdAt: string;
-        updatedAt: string;
-
-        version: CalendarArchiveVersion
-    }>,
-    "events-v1": YArray<V1ArchiveEvent>
 };
 
 export class CalendarLoadingManager {
-    private calendarArchiveDocuments: Map<number, SyncedDocument<CalendarArchiveDoc>> = new Map();
+    /**
+     * The archive documents, which store the events on past days, that are open.  
+     * Keyed by `${year}-${month}` (month is 1-based).
+     */
+    private calendarArchiveDocuments: Map<string, SyncedDocument<CalendarArchiveDoc>> = new Map();
 
     constructor(
         private client: Client,
         private viewType: CalendarViewType
     ) {
-
     }
 
-    public unload() {
+    async getCalendarObjects(date: Temporal.PlainDate): Promise<CalendarObject[]> {
+        if(!this.client.workspaceLoaded) await this.client.waitForWorkspaceLoad();
 
-    }
-}
-
-export async function getCalendarObjects(
-    client: Client,
-    date: Temporal.PlainDate,
-    weekView: boolean = false
-): Promise<CalendarObject[]> {
-    if(!client.workspaceLoaded) await client.waitForWorkspaceLoad();
-
-    // TODO: This is so so so inefficient and terrible lol
-    const attributePages = client.getAllAttributes();
-    
-    const objects: CalendarObject[] = [];
-    for(const { pageId, attributes: attrs } of attributePages) {
-        for(const [attributeIndex, attr] of attrs.entries()) {
-            if(attr.type === AttributeType.CalendarDeadline) {
-                if(!attr.enabled) continue;
-
-                const zdt = parseZonedDateTime(attr.due).withTimeZone(Temporal.Now.timeZoneId());
-                const deadline = zdt.toPlainDate();
-                if(Temporal.PlainDate.compare(deadline, date) === 0) {
-                    objects.push({
-                        type: "deadline",
-                        time: zdt.toPlainTime(),
-                        pageId,
-                        attributeIndex,
-                        color: attr.color,
-                        title: undefEmpty(attr.title) ?? client.pageTree.getNode(pageId)?.get("name") ?? "No title"
+        // Ensure the archive for this date is loaded
+        const archiveKey = `${date.year}-${date.month}`;
+        if(!this.calendarArchiveDocuments.has(archiveKey)) {
+            const doc = new Promise<SyncedDocument<CalendarArchiveDoc>>((resolve) => {
+                const doc = getSyncedDocument<CalendarArchiveDoc>(
+                    `calendar-archive:${date.year}:${date.month}`,
+                    () => {
+                        resolve(doc);
                     });
+            });
+
+            this.calendarArchiveDocuments.set(archiveKey, await doc);
+        }
+
+        const calendarArchiveDoc = this.calendarArchiveDocuments.get(archiveKey)!;
+
+        // If the archive has data for the provided day, convert and return it
+        const dayKey = makePlainDate(date);
+        const v1Data = calendarArchiveDoc.doc.getMap("v1-data");
+        if(v1Data.has(dayKey)) {
+            const events = v1Data.get(dayKey)!;
+            const objects: CalendarObject[] = [];
+            for(const event of events.toArray()) {
+                switch(event.type) {
+                    case "deadline":
+                        objects.push({
+                            type: "deadline",
+                            time: parsePlainTime(event.time),
+                            pageId: event.pageId,
+                            title: event.title,
+                            color: event.color,
+                            attributeIndex: -1 // Archive events have no attribute index
+                        });
+                        break;
+                    case "event":
+                        objects.push({
+                            type: "event",
+                            start: event.start ? parsePlainTime(event.start) : undefined,
+                            end: event.end ? parsePlainTime(event.end) : undefined,
+                            startDay: parsePlainDate(event.startDay),
+                            endDay: parsePlainDate(event.endDay),
+                            pageId: event.pageId,
+                            title: event.title,
+                            color: event.color,
+                            attributeIndex: -1 // Archive events have no attribute
+                        });
+                        break;
+                    case "allDayEvent":
+                        objects.push({
+                            type: "allDayEvent",
+                            pageId: event.pageId,
+                            title: event.title,
+                            color: event.color,
+                            attributeIndex: -1 // Archive events have no attribute
+                        });
+                        break;
                 }
-            } else if(attr.type === AttributeType.CalendarEvent) {
-                if(!attr.enabled) continue;
-                if(!weekView && attr.weekViewOnly) continue;
-                
-                for(const time of attr.times) {
-                    objects.push(...getEventTimeObjects(
-                        time,
-                        date,
-                        pageId,
-                        attributeIndex,
-                        attr.color,
-                        undefEmpty(attr.title) ?? client.pageTree.getNode(pageId)?.get("name") ?? "No title"
-                    ));
+            }
+
+            return objects;
+        }
+
+        // TODO: This is so so so inefficient and terrible lol
+        const attributePages = this.client.getAllAttributes();
+        
+        const objects: CalendarObject[] = [];
+        for(const { pageId, attributes: attrs } of attributePages) {
+            for(const [attributeIndex, attr] of attrs.entries()) {
+                if(attr.type === AttributeType.CalendarDeadline) {
+                    if(!attr.enabled) continue;
+
+                    const zdt = parseZonedDateTime(attr.due).withTimeZone(Temporal.Now.timeZoneId());
+                    const deadline = zdt.toPlainDate();
+                    if(Temporal.PlainDate.compare(deadline, date) === 0) {
+                        objects.push({
+                            type: "deadline",
+                            time: zdt.toPlainTime(),
+                            pageId,
+                            attributeIndex,
+                            color: attr.color,
+                            title: undefEmpty(attr.title) ?? this.client.pageTree.getNode(pageId)?.get("name") ?? "No title"
+                        });
+                    }
+                } else if(attr.type === AttributeType.CalendarEvent) {
+                    if(!attr.enabled) continue;
+                    if(this.viewType !== CalendarViewType.Week && attr.weekViewOnly) continue;
+                    
+                    for(const time of attr.times) {
+                        objects.push(...getEventTimeObjects(
+                            time,
+                            date,
+                            pageId,
+                            attributeIndex,
+                            attr.color,
+                            undefEmpty(attr.title) ?? this.client.pageTree.getNode(pageId)?.get("name") ?? "No title"
+                        ));
+                    }
                 }
             }
         }
+
+        return objects.sort((a, b) => {
+            // All-day events first
+            if(a.type === "allDayEvent" && b.type !== "allDayEvent") return -1;
+            if(b.type === "allDayEvent" && a.type !== "allDayEvent") return 1;
+            if(a.type === "allDayEvent" || b.type === "allDayEvent") return 0;
+            
+            // Deadlines and events by start time
+            const aTime = a.type === "deadline" ? a.time : a.start ?? Temporal.PlainTime.from("00:00");
+            const bTime = b.type === "deadline" ? b.time : b.start ?? Temporal.PlainTime.from("00:00");
+            return Temporal.PlainTime.compare(aTime, bTime);
+        });
     }
 
-    return objects.sort((a, b) => {
-        // All-day events first
-        if(a.type === "allDayEvent" && b.type !== "allDayEvent") return -1;
-        if(b.type === "allDayEvent" && a.type !== "allDayEvent") return 1;
-        if(a.type === "allDayEvent" || b.type === "allDayEvent") return 0;
-        
-        // Deadlines and events by start time
-        const aTime = a.type === "deadline" ? a.time : a.start ?? Temporal.PlainTime.from("00:00");
-        const bTime = b.type === "deadline" ? b.time : b.start ?? Temporal.PlainTime.from("00:00");
-        return Temporal.PlainTime.compare(aTime, bTime);
-    });
+    public unload() {
+        for(const doc of this.calendarArchiveDocuments.values()) {
+            doc.release();
+        }
+    }
 }
 
 function getEventTimeObjects(
