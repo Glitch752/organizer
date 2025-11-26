@@ -41,16 +41,30 @@ The `USERS` environment variable is a list in the following format: `USERS=user1
 
 And open your browser to `http://localhost:3000`.
 
+## Developing
+To develop the application, set up the client:
+```
+cd client
+pnpm i
+pnpm dev
+```
+
+and the server:
+```
+cd server
+pnpm i
+pnpm dev
+```
+
+Application data will be stored under `data/` in the server.
+
 ## TODO
-- [ ] Mobile responsiveness
-- [ ] Calendar functionality
-  - [ ] Server-side CalDAV integration?
+- [ ] Server-side CalDAV integration?
 - [ ] Better page links
   - [ ] Backlinks
 - [ ] Plugin system
 - [ ] Multi-workspace functionality
 - [ ] Import/export
-- [ ] Command palette
 - [ ] Full search
 - [ ] Offline support with a service worker
 
