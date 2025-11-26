@@ -1,3 +1,5 @@
+<!-- TODO: perhaps convert to an infinite scrolling grid like GNOME calendar has? -->
+
 <script lang="ts">
     import type { CalendarDisplay } from "../../stores/calendar";
     import { Temporal } from "@js-temporal/polyfill";

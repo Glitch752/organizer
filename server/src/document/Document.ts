@@ -5,6 +5,7 @@ import { StorageProvider } from './StorageProvider';
 import type { Connection } from '../Connection';
 import { AwarenessClientID, AwarenessUpdateMessage } from '@shared/connection/messages/awareness';
 import { deepEqual } from "@shared/util";
+import murmur from "murmurhash3js-revisited";
 
 /**
  * A server-side Yjs document container that tracks open connections and
@@ -24,6 +25,9 @@ export class DocumentContainer {
 
     private provider: StorageProvider;
     private closingTimeout: NodeJS.Timeout | null = null;
+
+    private loading = true;
+    private contentHash: number | null = null;
 
     /**
      * Create or get a DocumentContainer singleton for a given ID.
@@ -56,7 +60,14 @@ export class DocumentContainer {
 
         // Setup observers to persist the document when changed
         this.doc.on('update', async (update: Uint8Array) => {
-            // Save the full document state to storage (NoteStorageProvider saves main text)
+            if(this.loading) return; // No reason to save when loading
+
+            const oldHash = this.contentHash;
+            this.contentHash = this.getContentHash();
+            if(oldHash === this.contentHash) return; // No content change
+
+            // Save the document state to storage based on how the provider works
+            // (e.g. the note storage) provider stores the doc's text
             try {
                 await this.provider.save(this.id, this.doc);
             } catch(e) {
@@ -66,12 +77,23 @@ export class DocumentContainer {
     }
 
     public async load() {
+        this.loading = true;
+
         const update = await this.provider.load(this.id);
         
         if(update) Y.applyUpdate(this.doc, update);
         else this.provider.createInitialDocument(this.id, this.doc);
 
+        this.contentHash = this.getContentHash();
+        this.loading = false;
+
         return update !== null;
+    }
+
+    /** Hashes the current doc content with murmurhash3 */
+    private getContentHash(): number {
+        const snapshot = Y.encodeSnapshot(Y.snapshot(this.doc));
+        return murmur.x86.hash32(snapshot);
     }
 
     public addConnection(conn: Connection) {
@@ -213,8 +235,12 @@ export class DocumentContainer {
     }
 
     private async close() {
-        // I don't think we need to save again here but it doesn't hurt
+        // I don't think we need to try to save again here but it doesn't hurt
         try {
+            const oldHash = this.contentHash;
+            this.contentHash = this.getContentHash();
+            if(oldHash === this.contentHash) return; // No content change
+
             await this.provider.save(this.id, this.doc);
         } catch(e) {
             console.error(`Failed to save document ${this.id} on close:`, e);
