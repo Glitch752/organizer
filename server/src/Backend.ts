@@ -1,7 +1,7 @@
 import { WSContext } from "hono/ws";
 import WebSocket from 'ws';
 import { Connection } from "./Connection";
-import { SQLite } from "./database/SQLite";
+import { Database } from "./database/Database";
 import { AuthService } from "./AuthService";
 import { mkdirSync } from "node:fs";
 import { Hono } from "hono";
@@ -12,17 +12,28 @@ import { DataStore } from "./DataStore";
 
 export class Backend {
     private connectedClients: Map<WSContext<WebSocket.WebSocket>, Connection> = new Map();
-    private db: SQLite;
+    private db: Database;
     private authService: AuthService;
     private dataStore: DataStore;
 
     constructor() {
         mkdirSync('data', { recursive: true });
-        this.db = new SQLite({
-            database: 'data/db.sqlite'
-        });
+        this.db = new Database("data/db.sqlite");
         this.authService = new AuthService(this.db);
         this.dataStore = new DataStore('data');
+
+        // Set up before-shutdown handlers to close DB connection
+        // None of this should be required to run on shutdown, but
+        // is just useful cleanup.
+        process.on('SIGINT', async () => {
+            await this.gracefulShutdown();
+            process.exit(0);
+        });
+    }
+
+    private async gracefulShutdown() {
+        console.log("Shutting down server...");
+        await this.db.close();
     }
 
     // Expose auth service methods

@@ -4,7 +4,8 @@ import { Hono, HonoRequest } from "hono";
 import z from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { IncomingHttpHeaders } from "http";
-import { SQLite } from "./database/SQLite";
+import { Database } from "./database/Database";
+import { SessionID } from "./database/sessions";
 
 interface User {
     username: string;
@@ -13,9 +14,9 @@ interface User {
 
 export class AuthService {
     private users: User[] = [];
-    private db: SQLite;
+    private db: Database;
 
-    constructor(database: SQLite) {
+    constructor(database: Database) {
         this.db = database;
         this.initializeUsers();
     }
@@ -54,21 +55,21 @@ export class AuthService {
     }
 
     public async createSession(user: string): Promise<string> {
-        const sid = crypto.randomBytes(16).toString("hex");
+        const sid = crypto.randomBytes(16).toString("hex") as SessionID;
         // Sessions expire after 30 days
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        await this.db.createSession(sid, user, expiresAt);
+        await this.db.sessions.create(sid, user, expiresAt);
         return sid;
     }
 
-    public async getSession(sid?: string): Promise<string | undefined> {
+    public async getSession(sid?: SessionID): Promise<string | undefined> {
         if(!sid) return undefined;
-        return await this.db.getSession(sid);
+        return await this.db.sessions.get(sid);
     }
 
-    public async deleteSession(sid?: string): Promise<void> {
+    public async deleteSession(sid?: SessionID): Promise<void> {
         if(!sid) return;
-        await this.db.deleteSession(sid);
+        await this.db.sessions.delete(sid);
     }
 
     private getCookie(request: HonoRequest | string, name: string): string | undefined {
@@ -92,7 +93,7 @@ export class AuthService {
 
     public getAuthMiddleware() {
         return createMiddleware<{ Variables: { user: string | null } }>(async (c, next) => {
-            const sid = this.getCookie(c.req, "sid");
+            const sid = this.getCookie(c.req, "sid") as SessionID;
             const username = await this.getSession(sid);
             if(!username) {
                 c.set("user", null);
@@ -108,14 +109,14 @@ export class AuthService {
         let cookieHeader = requestHeaders["cookie"];
         if(!cookieHeader) return null;
 
-        const sid = this.getCookie(cookieHeader, "sid");
+        const sid = this.getCookie(cookieHeader, "sid") as SessionID;
         const username = await this.getSession(sid);
 
         return username ?? null;
     }
 
     public async authenticateWithCookie(cookie: string): Promise<string | null> {
-        const sid = this.getCookie(cookie, "sid");
+        const sid = this.getCookie(cookie, "sid") as SessionID;
         const username = await this.getSession(sid);
         return username ?? null;
     }
@@ -147,7 +148,7 @@ export class AuthService {
         );
 
         app.post("/logout", async (c) => {
-            const sid = this.getCookie(c.req, "sid");
+            const sid = this.getCookie(c.req, "sid") as SessionID;
             await this.deleteSession(sid);
             c.header(
                 "Set-Cookie",
