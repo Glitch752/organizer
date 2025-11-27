@@ -76,6 +76,7 @@ export class CalendarLoadingManager {
                 this._loadingArchiveDocuments.delete(archiveKey);
             })();
             this._loadingArchiveDocuments.set(archiveKey, loadPromise);
+            await loadPromise;
         }
 
         const calendarArchiveDoc = this.calendarArchiveDocuments.get(archiveKey)!;

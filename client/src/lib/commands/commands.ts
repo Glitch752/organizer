@@ -5,12 +5,12 @@ import { backUpWorkspace } from "./backup";
 export type Command = {
     name: string;
     execute: (client: Client) => void;
-    bind?: {
+    binds?: {
         key: string;
         ctrl?: boolean;
         shift?: boolean;
         alt?: boolean;
-    }
+    }[]
 };
 
 export const commands: Command[] = [
@@ -22,19 +22,30 @@ export const commands: Command[] = [
         name: "New page",
         execute: (client: Client) => {
             client.createPage(client.activePage ? { siblingId: client.activePage.id } : null);
-        }
+        },
+        binds: [
+            { key: "T", ctrl: true },
+            { key: "T", ctrl: true, alt: true }
+        ]
     },
     {
         name: "Delete current page",
         execute: (client: Client) => {
             if(!client.activePage) return;
             client.deletePage(client.activePage.id);
-        }
+        },
+        binds: [
+            { key: "W", ctrl: true },
+            { key: "W", ctrl: true, alt: true }
+        ]
     },
     {
         name: "Log out",
         execute: (_client: Client) => {
             logOut()
-        }
+        },
+        binds: [
+            { key: "L", ctrl: true, shift: true }
+        ]
     }
 ];

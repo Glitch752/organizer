@@ -4,6 +4,8 @@ import { DocSchemaToTopLevel, RawStorageProvider } from "./RawStorageProvider";
 import { CalendarArchiveSchema } from "@shared/calendar/archive";
 import { YDoc } from "@shared/typedYjs";
 
+// TODO: This should probably be stored in SQLite instead of json
+
 export class CalendarArchiveProvider extends RawStorageProvider {
     constructor(dataStore: DataStore) {
         super(dataStore, "calendar-archive", {

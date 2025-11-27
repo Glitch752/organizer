@@ -16,15 +16,30 @@
     import { client } from "../client";
     import { route } from "../../stores/router";
 
+    const SHIFT_CHORD_THRESHOLD = 300; // milliseconds
+    let lastShiftTime = 0;
+
     function onkeydown(e: KeyboardEvent) {
+        // shift-shift chord to open the command palette
+        if(e.key === "Shift" && !e.repeat && !e.ctrlKey && !e.altKey && !e.metaKey) {
+            const now = Date.now();
+            if(now - lastShiftTime <= SHIFT_CHORD_THRESHOLD) {
+                openPalette(">");
+                e.preventDefault();
+                lastShiftTime = 0;
+                return;
+            } else {
+                lastShiftTime = now;
+            }
+        }
+
         // Ctrl+P opens the palette to search for pages, Ctrl+Shift+P opens it to search for commands
         if(e.key.toLowerCase() === "p" && e.ctrlKey && !e.altKey) {
             if(e.shiftKey) {
-                paletteValue = ">";
+                openPalette(">");
             } else {
-                paletteValue = "";
+                openPalette("");
             }
-            paletteOpen = true;
             e.preventDefault();
         } else if(e.key === "Escape" && paletteOpen) {
             paletteOpen = false;
@@ -44,11 +59,11 @@
         }
 
         for(const command of commands) {
-            if(command.bind) {
-                if(e.key.toLowerCase() === command.bind.key.toLowerCase()
-                    && !!e.ctrlKey === !!command.bind.ctrl
-                    && !!e.shiftKey === !!command.bind.shift
-                    && !!e.altKey === !!command.bind.alt) {
+            if(command.binds) for(const bind of command.binds) {
+                if(e.key.toLowerCase() === bind.key.toLowerCase()
+                    && !!e.ctrlKey === !!bind.ctrl
+                    && !!e.shiftKey === !!bind.shift
+                    && !!e.altKey === !!bind.alt) {
                     command.execute(client);
                     e.preventDefault();
                     break;
