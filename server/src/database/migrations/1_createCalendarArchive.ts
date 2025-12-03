@@ -26,7 +26,8 @@ export async function up(db: Kysely<DatabaseSchema>): Promise<void> {
             col => col.notNull().defaultTo(1))
         
 		// JSON payload stored as text since SQLite has no native JSON type
-		.addColumn('data', 'text')
+		.addColumn('data', 'text',
+            col => col.notNull())
 
 		.execute();
 

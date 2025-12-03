@@ -1,10 +1,11 @@
 import Sqlite3 from "better-sqlite3";
-import { CompiledQuery, FileMigrationProvider, Kysely, Migrator, sql, SqliteDialect } from "kysely";
+import { FileMigrationProvider, Kysely, Migrator, sql, SqliteDialect } from "kysely";
 import { DatabaseSchema } from "./types";
 import path from "path";
 import { promises as fs } from 'fs';
-import { SessionsModule } from "./sessions";
+import { SessionsModule } from "./modules/sessions";
 import { DatabaseModule } from "./DatabaseModule";
+import { CalendarArchiveModule } from "./modules/calendarArchive";
 
 export class Database {
 	private db: Kysely<DatabaseSchema>;
@@ -15,6 +16,7 @@ export class Database {
 	}
 
 	public sessions: SessionsModule;
+	public calendarArchive: CalendarArchiveModule;
 
 	/**
 	 * @param database The database path, or `:memory:` for in-memory database
@@ -27,6 +29,7 @@ export class Database {
 		});
 
 		this.sessions = this.add(new SessionsModule(this.db));
+		this.calendarArchive = this.add(new CalendarArchiveModule(this.db));
 	}
 
 	public async initialize() {
@@ -59,11 +62,12 @@ export class Database {
 			process.exit(1)
 		}
 
-		this.modules.forEach(m => m.setIntervals());
+		this.modules.forEach(m => m.init());
 	}
 
 	public async close() {
-		this.modules.forEach(m => m.clearIntervals());
+		this.modules.forEach(m => m.destroy());
+
 		await this.db.destroy();
 	}
 }

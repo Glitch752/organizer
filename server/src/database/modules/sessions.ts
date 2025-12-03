@@ -1,6 +1,6 @@
 import { Generated, Kysely, sql } from "kysely";
-import type { DatabaseSchema } from "./types";
-import { DatabaseModule } from "./DatabaseModule";
+import type { DatabaseSchema } from "../types";
+import { DatabaseModule } from "../DatabaseModule";
 
 export type SessionID = string & { readonly __session_id: unique symbol };
 

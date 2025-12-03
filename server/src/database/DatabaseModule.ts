@@ -1,5 +1,6 @@
 import { Kysely } from "kysely";
 import { DatabaseSchema } from "./types";
+import { CronJob } from "cron";
 
 /** Base class for database modules, a made-up concept I'm using to segment functionality */
 export abstract class DatabaseModule {
@@ -13,23 +14,42 @@ export abstract class DatabaseModule {
         this.intervals.push({ func, interval: ms });
     }
 
-    public setIntervals() {
+    private cronTasks: {
+        func: () => void,
+        expression: string,
+        cron?: CronJob
+    }[] = [];
+
+    protected addCronTask(func: () => void, expression: string) {
+        this.cronTasks.push({ func, expression });
+    }
+
+    constructor(protected db: Kysely<DatabaseSchema>) {}
+
+    public async init(): Promise<void> {
         for(const interval of this.intervals) {
             interval.id = setInterval(
                 interval.func.bind(this),
                 interval.interval
             );
         }
-    }
 
-    public clearIntervals() {
-        for(const { interval } of this.intervals) {
-            clearInterval(interval);
+        for(const cronTask of this.cronTasks) {
+            cronTask.cron = new CronJob(
+                cronTask.expression,
+                cronTask.func.bind(this)
+            );
+            cronTask.cron.start();
         }
     }
 
-    constructor(protected db: Kysely<DatabaseSchema>) {}
+    public async destroy(): Promise<void> {
+        for(const { interval } of this.intervals) {
+            clearInterval(interval);
+        }
 
-    public async init(): Promise<void> {
+        for(const { cron } of this.cronTasks) {
+            cron?.stop();
+        }
     }
 }

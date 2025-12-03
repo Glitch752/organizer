@@ -5,7 +5,7 @@ import z from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { IncomingHttpHeaders } from "http";
 import { Database } from "./database/Database";
-import { SessionID } from "./database/sessions";
+import { SessionID } from "./database/modules/sessions";
 
 interface User {
     username: string;

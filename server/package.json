@@ -31,6 +31,7 @@
     "@hono/zod-validator": "^0.7.2",
     "@organizer/shared": "workspace:shared@*",
     "better-sqlite3": "^12.4.1",
+    "cron": "^4.3.4",
     "dotenv": "^17.2.1",
     "hono": "^4.9.5",
     "jsondiffpatch": "^0.7.3",

@@ -14,6 +14,17 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
+export interface CalendarArchive {
+  created_at: Generated<string>;
+  data: string | null;
+  end_datetime_utc: number;
+  event_id: Generated<number | null>;
+  start_datetime_utc: number;
+  type: string;
+  updated_at: Generated<string>;
+  version: Generated<number>;
+}
+
 export interface Sessions {
   created_at: Generated<string | null>;
   expires_at: string | null;
@@ -22,5 +33,6 @@ export interface Sessions {
 }
 
 export interface DB {
+  calendar_archive: CalendarArchive;
   sessions: Sessions;
 }
