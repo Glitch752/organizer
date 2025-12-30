@@ -13,7 +13,7 @@ FROM node:24 AS client-build
 # Stage 2: Build server
 FROM node:24 AS server-build
     WORKDIR /app/server
-    COPY server/package.json server/pnpm-lock.yaml ./
+    COPY server/package.json ./
     COPY shared ../shared
     COPY pnpm-workspace.yaml tsconfig.base.json ../
 

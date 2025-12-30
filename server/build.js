@@ -11,14 +11,14 @@ await esbuild.build({
     outfile: "dist/index.js",
     sourcemap: true,
     minify: false,
-    external: []
+    external: ["ws"]
 }).catch(() => process.exit(1));
 
 // Also copy node_sqlite3.node to dist/build.
 // This is super hacky, but whatever
-const srcBinding = "./node_modules/sqlite3/build/Release/node_sqlite3.node";
+const srcBinding = "./node_modules/better-sqlite3/build/Release/better_sqlite3.node";
 mkdirSync("./dist/build", { recursive: true });
-copyFileSync(srcBinding, "./dist/build/node_sqlite3.node");
+copyFileSync(srcBinding, "./dist/build/better_sqlite3.node");
 
 // Add an empty package.json because sqlite3 looks for it to find the bindings lol
 writeFileSync("./dist/package.json", "{}");
