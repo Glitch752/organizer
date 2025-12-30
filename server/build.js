@@ -11,7 +11,7 @@ await esbuild.build({
     outfile: "dist/index.js",
     sourcemap: true,
     minify: false,
-    external: ["ws"]
+    external: []
 }).catch(() => process.exit(1));
 
 // Also copy node_sqlite3.node to dist/build.

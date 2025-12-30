@@ -37,6 +37,7 @@
     "jsondiffpatch": "^0.7.3",
     "kysely": "^0.28.8",
     "murmurhash3js-revisited": "^3.0.0",
+    "ws": "^8.18.3",
     "y-protocols": "^1.0.6",
     "zod": "^4.1.5"
   },
