@@ -34,6 +34,9 @@ export class CalendarArchiveModule extends DatabaseModule {
 
     private async archiveOldEvents(): Promise<void> {
         // TODO
-        console.log("todo: archive old calendar events");
+        // Only if in development, log
+        if(process.env.NODE_ENV === 'development') {
+            console.log("todo: archive old calendar events");
+        }
     }
 }

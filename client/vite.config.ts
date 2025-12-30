@@ -4,7 +4,19 @@ import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { execSync } from 'child_process';
 
-const commitHash = execSync('if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then git rev-parse --short HEAD; else echo "unknown"; fi').toString();
+function execShSync(command: string): Buffer {
+    // If on windows, try to find sh and fail if it doesn't exist
+    if (process.platform === 'win32') {
+        try {
+            execSync('sh -c "echo found"', { stdio: 'ignore' });
+        } catch {
+            throw new Error("sh not found. install Git for Windows or another sh implementation and ensure it's on Path.");
+        }
+    }
+    return execSync(command, { shell: 'sh' });
+}
+
+const commitHash = execShSync('if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then git rev-parse --short HEAD; else echo "unknown"; fi').toString();
 
 // https://vite.dev/config/
 export default defineConfig({

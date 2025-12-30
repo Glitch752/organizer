@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { route } from "../stores/router";
 import { isMobile } from "./util/device.svelte";
 import type { SyncedDocument } from "../connection/document";
-import { getSyncedDocument } from "../connection";
+import { getSyncedDocument, getSyncedDocumentAsync } from "../connection";
 import type { PageMeta, WorkspaceSchema } from "@shared/connection/Workspace";
 import { type NoteSchema } from "@shared/connection/Document";
 
@@ -251,6 +251,54 @@ export class Client {
         });
 
         route.navigate(`/page/${id}`);
+
+        return node.id();
+    }
+
+    public async importPage(id: string, name: string, content: string, attributes?: Record<string, any>, parentId: string | null = null): Promise<string> {
+        if(!this.workspaceLoaded) throw new Error("Workspace not loaded");
+        
+        let parentNode;
+        if(parentId === null) parentNode = this.pageTree.root();
+        else parentNode = this.pageTree.getNode(parentId);
+
+        if(!parentNode) throw new Error("Parent node not found");
+
+        const node = parentNode.addChild(id, {
+            name: name,
+            collapsed: false
+        });
+
+        const doc = await getSyncedDocumentAsync<NoteSchema>(`page:${id}`);
+
+        // If the page already has content, prompt before overwriting
+        const initialContent = doc.doc.getText("content").toString();
+        console.log(`Initial content for imported page ${name}: ${doc.doc.getText("content").length} "${initialContent}"`);
+        // HACK, file for now since whatever
+        // TODO: Fix this to properly detect if the page exists and has been modified
+        if(initialContent !== "initial page!") {
+            if(!confirm(`Page "${name}" already exists and has content. Overwrite?`)) {
+                doc.release();
+                return node.id();
+            }
+        }
+        doc.doc.getText("content").delete(0, initialContent.length);
+
+        doc.doc.getText("content").insert(0, content);
+
+        if(attributes) {
+            const attrArray = this.attributesFor(id);
+            if(attrArray) {
+                attrArray.delete(0, attrArray.length);
+                for(const key of Object.keys(attributes)) {
+                    attrArray.push([attributes[key]]);
+                }
+            }
+        }
+
+        doc.release(true);
+
+        return node.id();
     }
 
     public deletePage(id: string) {

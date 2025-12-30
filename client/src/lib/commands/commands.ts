@@ -1,6 +1,6 @@
 import { logOut } from "../../pages/Auth.svelte";
 import type { Client } from "../client";
-import { backUpWorkspace } from "./backup";
+import { backUpWorkspace, importBackup } from "./backup";
 
 export type Command = {
     name: string;
@@ -17,6 +17,10 @@ export const commands: Command[] = [
     {
         name: "Back up workspace",
         execute: backUpWorkspace
+    },
+    {
+        name: "Import backup",
+        execute: importBackup
     },
     {
         name: "New page",

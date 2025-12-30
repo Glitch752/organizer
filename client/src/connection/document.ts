@@ -120,9 +120,9 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
 
             // When the user causes local updates, forward them to the server
             try {
-                this.socket.sendMessage({ type: "doc-update", doc: this.id, data: update });
                 // Mark we have unsynced changes until the server 'synced' state is received
                 this.status = SyncStatus.UnsyncedChanges;
+                this.socket.sendMessage({ type: "doc-update", doc: this.id, data: update });
             } catch(e) {
                 console.error("Failed to send doc update to server", e);
             }
@@ -146,10 +146,10 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         this.connect();
     }
 
-    public release() {
+    public release(waitForSync = false) {
         this.refCount--;
         if(this.refCount <= 0) {
-            this.disconnect();
+            this.disconnect(waitForSync);
             SyncedDocument.instances.delete(this.id);
             SyncedDocument.updateGlobalSyncStatus();
         }
@@ -162,7 +162,21 @@ export class SyncedDocument<DocType extends YDocSchema> extends EventEmitter<Syn
         this.socket.connectToDocument(this);
     }
     
-    private disconnect() {
+    private disconnect(waitForSync = false) {
+        if(waitForSync) {
+            this.doc.transact(() => {
+                // No-op transaction to flush any pending changes
+            });
+
+            console.log(`Waiting for document ${this.id} to sync before disconnecting...`);
+            this.once("statusChange", (newStatus) => {
+                if(newStatus !== SyncStatus.UnsyncedChanges) {
+                    this.disconnect(false);
+                }
+            });
+            return;
+        }
+
         console.log(`Disconnecting from document ${this.id}`);
         this.status = SyncStatus.Disconnected;
 

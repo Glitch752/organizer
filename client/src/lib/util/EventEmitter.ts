@@ -14,6 +14,14 @@ export class EventEmitter<Events extends Record<string, any>> {
         this.listeners[event]!.push(listener);
     }
 
+    public once<K extends keyof Events>(event: K, listener: (payload: Events[K]) => void): void {
+        const onceListener = (payload: Events[K]) => {
+            this.off(event, onceListener);
+            listener(payload);
+        };
+        this.on(event, onceListener);
+    }
+
     public off<K extends keyof Events>(event: K, listener: (payload: Events[K]) => void): void {
         this.listeners[event] = this.listeners[event]?.filter(l => l !== listener);
     }

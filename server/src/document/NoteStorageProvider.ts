@@ -51,7 +51,7 @@ export class NoteStorageProvider implements StorageProvider {
     }
 
     public createInitialDocument(id: DocumentID, doc: YDoc<NoteSchema>): void {
-        doc.getText("content").insert(0, "> initial page :)");
+        doc.getText("content").insert(0, "initial page!");
         doc.getMap("selection").set("latestSelection", null);
         doc.getMap("selection").set("latestScrollPos", null);
 
