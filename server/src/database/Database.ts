@@ -1,11 +1,10 @@
 import Sqlite3 from "better-sqlite3";
 import { FileMigrationProvider, Kysely, Migrator, sql, SqliteDialect } from "kysely";
 import { DatabaseSchema } from "./types";
-import path from "path";
-import { promises as fs } from 'fs';
 import { SessionsModule } from "./modules/sessions";
 import { DatabaseModule } from "./DatabaseModule";
 import { CalendarArchiveModule } from "./modules/calendarArchive";
+import { ListMigrationProvider } from "./ListMigrationProvider";
 
 export class Database {
 	private db: Kysely<DatabaseSchema>;
@@ -38,11 +37,9 @@ export class Database {
 		// https://kysely.dev/docs/migrations
 		const migrator = new Migrator({
 			db: this.db,
-			provider: new FileMigrationProvider({
-				fs,
-				path,
-				// This needs to be an absolute path.
-				migrationFolder: path.join(__dirname, 'migrations'),
+			provider: new ListMigrationProvider({
+				'0_createSessions': await import('./migrations/0_createSessions'),
+				'1_createCalendarArchive': await import('./migrations/1_createCalendarArchive'),
 			})
 		})
 
