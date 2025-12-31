@@ -1,5 +1,4 @@
 import { route } from "../stores/router";
-import { PermissionStatus } from "@shared/connection/Permissions";
 import { AUTHENTICATION_FAILED_CODE } from "@shared/connection/Messages";
 import { writable } from "svelte/store";
 import { SyncedDocument } from "./document";
@@ -45,7 +44,6 @@ socket.on("close", ({ code, reason }) => {
 socket.on("message", (msg) => {
     switch(msg.type) {
         case "authenticated": {
-            console.log(`Authenticated as ${msg.username} with permissions ${PermissionStatus[msg.permissions]}`);
             username.set(msg.username);
             break;
         }

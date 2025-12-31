@@ -2,6 +2,7 @@
 
 import type { ClientToServerMessage, ServerToClientMessage } from "@shared/connection/Messages";
 import { EventEmitter } from "../lib/util/EventEmitter";
+import { PermissionStatus } from "@shared/connection/Permissions";
 import type { SyncedDocument } from "./document";
 
 type ServerSocketEvents = {
@@ -13,8 +14,13 @@ type ServerSocketEvents = {
 
 export class ServerSocket extends EventEmitter<ServerSocketEvents> {
     private ws: WebSocket;
+    /** Queued messages to be sent immediately after the socket opens. */
     private queuedMessages: ClientToServerMessage[] = [];
+    /** Queued messages to be sent after authentication. */
+    private queuedMessagesAfterAuth: ClientToServerMessage[] = [];
     public registeredDocuments: Map<string, SyncedDocument<any>> = new Map();
+
+    public isAuthenticated: boolean = false;
 
     constructor(private url: string) {
         super();
@@ -26,7 +32,7 @@ export class ServerSocket extends EventEmitter<ServerSocketEvents> {
         socket.onopen = () => {
             console.log("WebSocket connection opened");
             this.emit("open", undefined);
-            this.queuedMessages.forEach(msg => this.send(msg));
+            this.queuedMessages.forEach(msg => this.send(msg, false));
             this.queuedMessages = [];
         };
         socket.onclose = (e) => {
@@ -49,6 +55,14 @@ export class ServerSocket extends EventEmitter<ServerSocketEvents> {
             }
 
             const msg = raw as ServerToClientMessage;
+
+            if(msg.type === "authenticated") {
+                console.log(`Authenticated as ${msg.username} with permissions ${PermissionStatus[msg.permissions]}`);
+                this.isAuthenticated = true;
+                this.queuedMessagesAfterAuth.forEach(m => this.send(m, false));
+                this.queuedMessagesAfterAuth = [];
+            }
+
             this.emit("message", msg);
         };
         return socket;
@@ -67,7 +81,11 @@ export class ServerSocket extends EventEmitter<ServerSocketEvents> {
         });
     }
 
-    private send(message: ClientToServerMessage) {
+    private send(message: ClientToServerMessage, waitForAuth = true) {
+        if(waitForAuth && !this.isAuthenticated) {
+            this.queuedMessagesAfterAuth.push(message);
+            return;
+        }
         if(this.ws.readyState !== WebSocket.OPEN) {
             this.queuedMessages.push(message);
             return;
@@ -92,7 +110,7 @@ export class ServerSocket extends EventEmitter<ServerSocketEvents> {
     public connectToDocument(doc: SyncedDocument<any>) {
         if(this.registeredDocuments.has(doc.id)) throw new Error(`Already connected to document ${doc.id}`);
         this.registeredDocuments.set(doc.id, doc); 
-        this.send({ type: "sync-begin", doc: doc.id });  
+        this.send({ type: "sync-begin", doc: doc.id });
     }
 
     public disconnectFromDocument(doc: SyncedDocument<any>) {
