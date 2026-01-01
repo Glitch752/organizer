@@ -1,7 +1,6 @@
 import { Kysely, sql } from 'kysely'
-import { DatabaseSchema } from '../types';
 
-export async function up(db: Kysely<DatabaseSchema>): Promise<void> {
+export async function up(db: Kysely<any>): Promise<void> {
     // CREATE TABLE "sessions" (
     //     "session_id" varchar(255) NOT NULL,
     //     "username" varchar(255) NOT NULL,
@@ -23,6 +22,6 @@ export async function up(db: Kysely<DatabaseSchema>): Promise<void> {
         .execute();
 }
 
-export async function down(db: Kysely<DatabaseSchema>): Promise<void> {
+export async function down(db: Kysely<any>): Promise<void> {
     await db.schema.dropTable('sessions').execute();
 }

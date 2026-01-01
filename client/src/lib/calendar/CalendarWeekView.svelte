@@ -4,7 +4,7 @@
     import type { Client } from "../client";
     import CalendarWeekObject, { timeToPosition } from "./CalendarWeekObject.svelte";
     import { onDestroy } from "svelte";
-    import { CalendarLoadingManager, CalendarViewType } from "./calendar";
+    import { CalendarLoadingManager, CalendarViewType, type CalendarObject } from "./calendar";
 
     let {
         display = $bindable(), client
@@ -17,7 +17,14 @@
     const loadingManager = new CalendarLoadingManager(client, CalendarViewType.Week);
     onDestroy(() => loadingManager.unload());
     
-    async function getWeekDays(selectedDay: { year: number; month: number; day: number; }) {
+    function getWeekDays(selectedDay: { year: number; month: number; day: number; }): {
+        date: Temporal.PlainDate;
+        dayName: string;
+        dayNumber: number;
+        isToday: boolean;
+        isSelected: boolean;
+        calendarObjects: Promise<CalendarObject[]>;
+    }[] {
         const selectedDate = Temporal.PlainDate.from({
             year: selectedDay.year,
             month: selectedDay.month,
@@ -28,7 +35,7 @@
         const dayOfWeek = selectedDate.dayOfWeek % 7; // Convert to 0=Sunday, 6=Saturday
         const startOfWeek = selectedDate.subtract({ days: dayOfWeek });
 
-        return await Promise.all(Array.from({ length: 7 }, async (_, i) => {
+        return Array.from({ length: 7 }, (_, i) => {
             const date = startOfWeek.add({ days: i });
             return {
                 date,
@@ -36,9 +43,9 @@
                 dayNumber: date.day,
                 isToday: isToday(date),
                 isSelected: date.equals(selectedDate),
-                calendarObjects: await loadingManager.getCalendarObjects(date)
+                calendarObjects: loadingManager.getCalendarObjects(date)
             };
-        }));
+        });
     }
 
     let weekDays = $derived(getWeekDays(display.selectedDay));
@@ -112,63 +119,65 @@
         </div>
     </div>
 
-    {#await weekDays then days}
-        <div class="header-row">
-            <span class="timezone">
-                {getCurrentTimezone()}
-            </span>
-            {#each days as dayInfo}
-                <button 
-                    class="day-header blue"
-                    class:active={dayInfo.isSelected}
-                    class:today={dayInfo.isToday}
-                    onclick={() => selectDay(dayInfo.date)}
-                >
-                    <div class="day-name">{dayInfo.dayName}</div>
-                    <div class="day-number">{dayInfo.dayNumber}</div>
-                </button>
-            {/each}
-        </div>
+    <div class="header-row">
+        <span class="timezone">
+            {getCurrentTimezone()}
+        </span>
+        {#each weekDays as dayInfo}
+            <button 
+                class="day-header blue"
+                class:active={dayInfo.isSelected}
+                class:today={dayInfo.isToday}
+                onclick={() => selectDay(dayInfo.date)}
+            >
+                <div class="day-name">{dayInfo.dayName}</div>
+                <div class="day-number">{dayInfo.dayNumber}</div>
+            </button>
+        {/each}
+    </div>
 
-        <div class="day-columns">
-            {#each days as dayInfo}
-                <div 
-                    class="day-column"
-                    class:today-column={dayInfo.isToday}
-                    class:selected-column={dayInfo.isSelected}
-                >
-                    <div class="all-day-events">
-                        {#each dayInfo.calendarObjects as object}
+    <div class="day-columns">
+        {#each weekDays as dayInfo}
+            <div 
+                class="day-column"
+                class:today-column={dayInfo.isToday}
+                class:selected-column={dayInfo.isSelected}
+            >
+                <div class="all-day-events">
+                    {#await dayInfo.calendarObjects then objects}
+                        {#each objects as object}
                             {#if object.type === "allDayEvent"}
                                 <CalendarWeekObject {object} {client} />
                             {/if}
                         {/each}
-                    </div>
-                    <div class="day-content">
-                        <!-- If this is today, draw the current time line -->
-                        {#if dayInfo.isToday}
-                            <div 
-                                class="current-time-line" 
-                                style="--pos: {currentTime}"
-                            ></div>
-                        {/if}
+                    {/await}
+                </div>
+                <div class="day-content">
+                    <!-- If this is today, draw the current time line -->
+                    {#if dayInfo.isToday}
+                        <div 
+                            class="current-time-line" 
+                            style="--pos: {currentTime}"
+                        ></div>
+                    {/if}
 
-                        {#each dayInfo.calendarObjects as object}
+                    {#await dayInfo.calendarObjects then objects}
+                        {#each objects as object}
                             {#if object.type !== "allDayEvent"}
                                 <CalendarWeekObject {object} {client} />
                             {/if}
                         {/each}
-                    </div>
+                    {/await}
                 </div>
-            {/each}
-        </div>
+            </div>
+        {/each}
+    </div>
 
-        <div class="time-gridlines">
-            {#each timeSlots as _timeSlot}
-                <div class="time-gridline"></div>
-            {/each}
-        </div>
-    {/await}
+    <div class="time-gridlines">
+        {#each timeSlots as _timeSlot}
+            <div class="time-gridline"></div>
+        {/each}
+    </div>
 </div>
 
 <style lang="scss">

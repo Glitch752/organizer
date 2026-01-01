@@ -1,7 +1,6 @@
 import { Kysely, sql } from 'kysely'
-import { DatabaseSchema } from '../types';
 
-export async function up(db: Kysely<DatabaseSchema>): Promise<void> {
+export async function up(db: Kysely<any>): Promise<void> {
 	await db.schema
 		.createTable('calendar_archive')
 
@@ -39,7 +38,7 @@ export async function up(db: Kysely<DatabaseSchema>): Promise<void> {
 		.execute();
 }
 
-export async function down(db: Kysely<DatabaseSchema>): Promise<void> {
+export async function down(db: Kysely<any>): Promise<void> {
 	await db.schema.dropIndex('idx_calendar_archive_times').execute();
 	await db.schema.dropTable('calendar_archive').execute();
 }
